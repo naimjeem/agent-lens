@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Lens — Multi-Agent Usage Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      background:
+        radial-gradient(1200px 600px at 0% -10%, rgba(203, 166, 247, 0.08), transparent 60%),
+        radial-gradient(1000px 500px at 100% -20%, rgba(137, 180, 250, 0.06), transparent 60%),
+        #11111b;
+      color: #cdd6f4;
+      padding: 24px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.5rem;
+      background: linear-gradient(90deg, #cba6f7 0%, #89b4fa 50%, #74c7ec 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #313244;
+      padding-bottom: 12px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    h2 {
+      font-size: 1rem;
+      color: #a6adc8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      padding: 16px;
+      min-width: 0;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+    }
+    .card .label {
+      font-size: 0.75rem;
+      color: #a6adc8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .card .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f5f5f7;
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card .sub {
+      font-size: 0.7rem;
+      color: #6c7086;
+      margin-top: 2px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .summary-panel {
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 6px 24px rgba(0,0,0,0.25);
+    }
+    .summary-panel.today {
+      border-color: #cba6f7;
+      border-width: 1px;
+      box-shadow: 0 0 0 1px #cba6f7, 0 8px 32px rgba(203,166,247,0.12);
+    }
+    .summary-panel .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .summary-panel .panel-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .summary-panel.today .panel-badge {
+      background: linear-gradient(135deg, #cba6f7, #89b4fa);
+      color: #11111b;
+    }
+    .summary-panel.alltime .panel-badge {
+      background: #45475a;
+      color: #a6adc8;
+    }
+    .summary-panel .panel-date {
+      font-size: 0.75rem;
+      color: #6c7086;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .metric {
+      padding: 10px;
+      border-radius: 6px;
+      background: #11111b;
+    }
+    .metric .metric-label {
+      font-size: 0.65rem;
+      color: #a6adc8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .metric .metric-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f5f5f7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .metric .metric-value.green { color: #a6e3a1; }
+    .metric .metric-value.blue { color: #74c7ec; }
+    .metric .metric-value.amber { color: #f9e2af; }
+    .metric .metric-value.pink { color: #f5c2e7; }
+    .metric .metric-sub {
+      font-size: 0.6rem;
+      color: #6c7086;
+      margin-top: 2px;
+    }
+    .summary-divider {
+      border: none;
+      border-top: 1px solid #313244;
+      margin: 14px 0;
+    }
+    .section {
+      margin-bottom: 32px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    th {
+      text-align: left;
+      color: #a6adc8;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-bottom: 1px solid #313244;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 6px 12px;
+      border-bottom: 1px solid #1e1e2e;
+      vertical-align: top;
+    }
+    tr:hover td {
+      background: #1e1e2e;
+    }
+    .prompt-text {
+      max-width: 500px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #cdd6f4;
+    }
+    .project-badge {
+      display: inline-block;
+      background: rgba(116,199,236,0.12);
+      color: #74c7ec;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      border: 1px solid rgba(116,199,236,0.2);
+    }
+    .bar-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bar {
+      height: 16px;
+      background: linear-gradient(90deg, #cba6f7, #89b4fa);
+      border-radius: 4px;
+      min-width: 2px;
+    }
+    .bar-count {
+      font-size: 0.75rem;
+      color: #a6adc8;
+      min-width: 40px;
+    }
+    .tool-name {
+      min-width: 100px;
+      font-weight: 600;
+      color: #cba6f7;
+    }
+    .loading {
+      color: #6c7086;
+      font-style: italic;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      padding: 6px 14px;
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 6px;
+      color: #a6adc8;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: inherit;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, #cba6f7, #89b4fa);
+      color: #11111b;
+      border-color: transparent;
+      font-weight: 700;
+    }
+    #history-table-body tr { cursor: default; }
+    .session-id {
+      font-size: 0.65rem;
+      color: #6c7086;
+    }
+    .cost-total td { font-weight: 700; border-top: 2px solid #45475a; color: #f5f5f7; }
+    .cost-value { text-align: right; font-variant-numeric: tabular-nums; }
+    .cost-bar {
+      height: 12px;
+      background: linear-gradient(90deg, #f38ba8, #f5c2e7);
+      border-radius: 3px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .cost-note {
+      font-size: 0.7rem;
+      color: #6c7086;
+      margin-top: 8px;
+    }
+    .agent-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 12px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+    }
+    .agent-tab {
+      padding: 6px 12px;
+      background: #11111b;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      color: #a6adc8;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .agent-tab:hover { color: #f5f5f7; border-color: #6c7086; transform: translateY(-1px); }
+    .agent-tab.active {
+      background: linear-gradient(135deg, #cba6f7, #89b4fa);
+      color: #11111b;
+      border-color: transparent;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(203,166,247,0.25);
+    }
+    .agent-tab.active .dot { background: #11111b; }
+    .agent-tab.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .agent-tab .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #a6e3a1;
+    }
+    .agent-tab.disabled .dot { background: #6c7086; }
+    .agent-badge {
+      display: inline-block;
+      background: rgba(203,166,247,0.12);
+      color: #cba6f7;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      margin-right: 4px;
+      border: 1px solid rgba(203,166,247,0.25);
+    }
+    .tool-row { cursor: pointer; }
+    .tool-row:hover .tool-name { color: #f5c2e7; }
+    .tool-row:hover .bar { background: #89b4fa; }
+    .tool-detail-panel {
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      margin-top: 12px;
+      padding: 16px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .tool-detail-panel h3 {
+      font-size: 0.85rem;
+      color: #cba6f7;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tool-detail-panel .close-btn {
+      background: none;
+      border: 1px solid #45475a;
+      color: #a6adc8;
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.7rem;
+    }
+    .tool-detail-panel .close-btn:hover { color: #f5f5f7; border-color: #6c7086; }
+    .detail-row {
+      padding: 6px 0;
+      border-bottom: 1px solid #313244;
+      font-size: 0.75rem;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-cmd {
+      color: #a6e3a1;
+      font-size: 0.75rem;
+      word-break: break-all;
+    }
+    .detail-desc {
+      color: #a6adc8;
+      font-size: 0.7rem;
+    }
+    .detail-path {
+      color: #74c7ec;
+      font-size: 0.75rem;
+      word-break: break-all;
+    }
+    .detail-meta {
+      color: #6c7086;
+      font-size: 0.65rem;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Agent Lens — Multi-Agent Usage Dashboard</h1>
+
+  <div id="agent-tabs" class="agent-tabs">
+    <span class="loading">Loading agents...</span>
+  </div>
+
+  <div id="summary-section" class="section">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <div class="section">
+    <h2>Cache Performance</h2>
+    <div id="cache-cards" class="cards">
+      <div class="card"><div class="label">Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Daily Cost &amp; Cache</h2>
+    <div id="daily-costs">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Tool Calls</h2>
+    <div id="tool-calls">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Project Activity</h2>
+    <table>
+      <thead>
+        <tr><th>Project</th><th>Messages</th><th>Sessions</th><th>Last Active</th></tr>
+      </thead>
+      <tbody id="projects-body">
+        <tr><td colspan="4" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Prompt History</h2>
+    <div class="tabs" id="history-tabs"></div>
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Project</th><th>Prompt</th><th>Session</th></tr>
+      </thead>
+      <tbody id="history-table-body">
+        <tr><td colspan="4" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const fmt = (n) => n != null ? n.toLocaleString() : '—';
+    const fmtDate = (ts) => {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+    const fmtDateTime = (ts) => {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleString('en-AU', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+      });
+    };
+    const shortProject = (p) => {
+      if (!p) return '—';
+      const parts = p.split('/');
+      // Take last meaningful segment(s)
+      return parts.slice(-1)[0] || parts.slice(-2)[0];
+    };
+
+    let currentAgent = '';
+
+    async function load() {
+      const agents = await fetch('/api/agents').then(r => r.json());
+      renderAgentTabs(agents);
+      await reload();
+    }
+
+    let _agentTabsBound = false;
+    function renderAgentTabs(agents) {
+      const el = document.getElementById('agent-tabs');
+      const allActive = !currentAgent ? 'active' : '';
+      const buttons = [
+        `<button class="agent-tab ${allActive}" data-agent=""><span class="dot"></span>All Agents</button>`,
+        ...agents.map(a => {
+          const cls = ['agent-tab'];
+          if (currentAgent === a.name) cls.push('active');
+          if (!a.enabled) cls.push('disabled');
+          const title = a.enabled ? a.dataDir : `${a.dataDir} (not found)`;
+          return `<button class="${cls.join(' ')}" data-agent="${a.name}" ${a.enabled ? '' : 'disabled'} title="${title}"><span class="dot"></span>${a.displayName}</button>`;
+        })
+      ].join('');
+      el.innerHTML = buttons;
+      if (!_agentTabsBound) {
+        el.addEventListener('click', (e) => {
+          const btn = e.target.closest('.agent-tab');
+          if (!btn || btn.classList.contains('disabled')) return;
+          const agent = btn.dataset.agent || '';
+          if (agent === currentAgent) return;
+          currentAgent = agent;
+          el.querySelectorAll('.agent-tab').forEach(t => t.classList.toggle('active', t.dataset.agent === agent));
+          reload();
+        });
+        _agentTabsBound = true;
+      }
+    }
+
+    function q(path) {
+      return currentAgent ? `${path}?agent=${encodeURIComponent(currentAgent)}` : path;
+    }
+
+    async function reload() {
+      document.getElementById('summary-section').innerHTML = '<div class="loading">Loading...</div>';
+      document.getElementById('cache-cards').innerHTML = '<div class="card"><div class="label">Loading...</div></div>';
+      document.getElementById('daily-costs').innerHTML = '<div class="loading">Loading...</div>';
+      document.getElementById('tool-calls').innerHTML = '<div class="loading">Loading...</div>';
+      document.getElementById('projects-body').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+      document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+
+      const [stats, history, toolData, projects, costData] = await Promise.all([
+        fetch('/api/stats').then(r => r.json()),
+        fetch(q('/api/history')).then(r => r.json()),
+        fetch(q('/api/tool-calls')).then(r => r.json()),
+        fetch(q('/api/projects')).then(r => r.json()),
+        fetch(q('/api/daily-costs')).then(r => r.json()),
+      ]);
+
+      renderSummary(costData, stats);
+      renderDailyCosts(costData);
+      renderTools(toolData);
+      renderProjects(projects);
+      renderHistory(history);
+    }
+
+    function renderSummary(costData, stats) {
+      const container = document.getElementById('summary-section');
+      const totals = costData.totals || {};
+      const days = costData.days || [];
+      const rates = costData.rates || {};
+      const refAgent = costData.agentFilter || 'claude';
+      const refRate = rates[refAgent] || rates.claude || { input: 5e-6, output: 25e-6 };
+      const today = new Date().toISOString().slice(0, 10);
+      const todayData = days.find(d => d.date === today);
+
+      function calcMetrics(d) {
+        const allInput = d.input + d.cacheRead + d.cacheCreate;
+        const hitRate = allInput > 0 ? (d.cacheRead / allInput * 100) : 0;
+        const noCacheCost = allInput * refRate.input + d.output * refRate.output;
+        const saved = noCacheCost - d.cost;
+        return { hitRate, saved };
+      }
+
+      function topModelsCard(models, cls) {
+        if (!models || Object.keys(models).length === 0) return '';
+        const sorted = Object.entries(models).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        return `
+        <div class="top-models" style="margin-top:12px;padding-top:12px;border-top:1px solid #313244">
+          <div class="metric-label" style="margin-bottom:8px">Top Models</div>
+          ${sorted.map(([model, count], i) => `
+            <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+              <span class="model-rank" style="font-size:0.65rem;color:#a6adc8;min-width:16px">${i + 1}.</span>
+              <span class="model-name" style="font-size:0.75rem;color:#cba6f7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${model}</span>
+              <span class="model-count" style="font-size:0.7rem;color:#a6adc8">${fmt(count)} responses</span>
+            </div>
+          `).join('')}
+        </div>`;
+      }
+
+      function panel(data, isToday, models) {
+        const cls = isToday ? 'today' : 'alltime';
+        const badge = isToday ? 'Today' : 'All Time';
+        const date = isToday ? today : (days.length ? `Since ${days[0].date}` : '');
+        const m = calcMetrics(data);
+
+        return `
+        <div class="summary-panel ${cls}">
+          <div class="panel-header">
+            <span class="panel-badge">${badge}</span>
+            <span class="panel-date">${date}</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric">
+              <div class="metric-label">Sessions</div>
+              <div class="metric-value">${fmt(data.sessions)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Messages</div>
+              <div class="metric-value">${fmt(data.messages)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Tool Calls</div>
+              <div class="metric-value">${fmt(data.toolCalls)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Cache Hit</div>
+              <div class="metric-value ${m.hitRate > 80 ? 'green' : m.hitRate > 50 ? 'amber' : 'pink'}">${m.hitRate.toFixed(1)}%</div>
+            </div>
+          </div>
+          <hr class="summary-divider">
+          <div class="metric-grid">
+            <div class="metric">
+              <div class="metric-label">Est. Cost</div>
+              <div class="metric-value amber">$${data.cost.toFixed(2)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Saved</div>
+              <div class="metric-value green">$${m.saved.toFixed(2)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Cache Read</div>
+              <div class="metric-value blue">${fmt(data.cacheRead)}</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Output Tokens</div>
+              <div class="metric-value">${fmt(data.output)}</div>
+            </div>
+          </div>
+          ${topModelsCard(models, cls)}
+        </div>`;
+      }
+
+      const todayPanel = todayData
+        ? panel(todayData, true, todayData.models)
+        : `<div class="summary-panel today">
+            <div class="panel-header">
+              <span class="panel-badge">Today</span>
+              <span class="panel-date">${today}</span>
+            </div>
+            <div class="metric" style="padding:10px"><div class="metric-label">No activity yet</div></div>
+          </div>`;
+
+      const allTimePanel = panel(totals, false, totals.models);
+
+      container.innerHTML = `<div class="summary-grid">${todayPanel}${allTimePanel}</div>`;
+    }
+
+    function card(label, value, sub) {
+      return `<div class="card">
+        <div class="label">${label}</div>
+        <div class="value">${value}</div>
+        ${sub ? `<div class="sub">${sub}</div>` : ''}
+      </div>`;
+    }
+
+    function renderDailyCosts(data) {
+      const container = document.getElementById('daily-costs');
+      const { days, totals } = data;
+      const rates = data.rates || {};
+      const refAgent = data.agentFilter || 'claude';
+      const refRate = rates[refAgent] || rates.claude || { input: 5e-6, output: 25e-6, label: '' };
+      if (!days || !days.length) {
+        container.innerHTML = '<div class="loading">No cost data found</div>';
+        return;
+      }
+
+      // Render cache summary cards
+      const totalAllInput = totals.input + totals.cacheRead + totals.cacheCreate;
+      const hitRate = totalAllInput > 0 ? (totals.cacheRead / totalAllInput * 100) : 0;
+      const costWithoutCache = totalAllInput * refRate.input + totals.output * refRate.output;
+      const saved = costWithoutCache - totals.cost;
+      const savingsPct = costWithoutCache > 0 ? ((1 - totals.cost / costWithoutCache) * 100) : 0;
+
+      document.getElementById('cache-cards').innerHTML = [
+        card('Cache Hit Rate', hitRate.toFixed(1) + '%', `${fmt(totals.cacheRead)} of ${fmt(totalAllInput)} input tokens`),
+        card('Cost With Cache', '$' + totals.cost.toFixed(2), 'What you actually paid'),
+        card('Cost Without Cache', '$' + costWithoutCache.toFixed(2), `If all input at $${(refRate.input * 1e6).toFixed(2)}/M`),
+        card('Cache Savings', '$' + saved.toFixed(2), savingsPct.toFixed(0) + '% cheaper'),
+      ].join('');
+
+      // Daily table with cache columns
+      const maxCost = Math.max(...days.map(d => d.cost), 0.01);
+
+      const rows = days.map(d => {
+        const allInput = d.input + d.cacheRead + d.cacheCreate;
+        const hr = allInput > 0 ? (d.cacheRead / allInput * 100) : 0;
+        const noCacheCost = allInput * refRate.input + d.output * refRate.output;
+        const sv = noCacheCost - d.cost;
+        return `
+        <tr>
+          <td>${d.date}</td>
+          <td class="cost-value">${fmt(d.messages)}</td>
+          <td class="cost-value">${fmt(d.toolCalls)}</td>
+          <td class="cost-value">${fmt(d.sessions)}</td>
+          <td class="cost-value">${fmt(d.cacheRead)}</td>
+          <td class="cost-value">${fmt(d.cacheCreate)}</td>
+          <td class="cost-value" style="color: ${hr > 80 ? '#a6e3a1' : hr > 50 ? '#f9e2af' : '#f38ba8'}">${hr.toFixed(1)}%</td>
+          <td class="cost-value">
+            <div class="bar-container">
+              <span class="cost-bar" style="width: ${Math.max((d.cost / maxCost) * 80, 2)}px"></span>
+              <span>$${d.cost.toFixed(2)}</span>
+            </div>
+          </td>
+          <td class="cost-value" style="color: #a6e3a1">$${sv.toFixed(2)}</td>
+        </tr>
+      `}).join('');
+
+      const totalNoCacheCost = costWithoutCache;
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th style="text-align:right">Msgs</th><th style="text-align:right">Tools</th><th style="text-align:right">Sess</th>
+              <th style="text-align:right">Cache Read</th><th style="text-align:right">Cache Write</th><th style="text-align:right">Hit Rate</th><th style="text-align:right">Est. Cost</th><th style="text-align:right">Saved</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            <tr class="cost-total">
+              <td>Total</td>
+              <td class="cost-value">${fmt(totals.messages)}</td>
+              <td class="cost-value">${fmt(totals.toolCalls)}</td>
+              <td class="cost-value">${fmt(totals.sessions)}</td>
+              <td class="cost-value">${fmt(totals.cacheRead)}</td>
+              <td class="cost-value">${fmt(totals.cacheCreate)}</td>
+              <td class="cost-value" style="color: #a6e3a1">${hitRate.toFixed(1)}%</td>
+              <td class="cost-value"><strong>$${totals.cost.toFixed(2)}</strong></td>
+              <td class="cost-value" style="color: #a6e3a1"><strong>$${saved.toFixed(2)}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="cost-note">Rates (${refAgent}): ${refRate.label || ''}. Override per-agent via RATE_* env vars. Cost shown sums per-event using each agent's own rates.</div>
+      `;
+    }
+
+    function renderTools(data) {
+      const tools = data.tools || [];
+      const container = document.getElementById('tool-calls');
+      if (!tools.length) {
+        container.innerHTML = '<div class="loading">No tool calls found</div>';
+        return;
+      }
+      const max = tools[0].count;
+      const rows = tools.map(t => `
+        <tr class="tool-row" data-tool="${t.tool}">
+          <td class="tool-name">${t.tool}</td>
+          <td style="width:100%">
+            <div class="bar-container">
+              <div class="bar" style="width: ${Math.max((t.count / max) * 100, 1)}%"></div>
+              <span class="bar-count">${fmt(t.count)}</span>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      container.innerHTML = `
+        <table><tbody id="tool-table-body">${rows}</tbody></table>
+        <div id="tool-detail-container"></div>
+      `;
+
+      document.getElementById('tool-table-body').addEventListener('click', (e) => {
+        const row = e.target.closest('.tool-row');
+        if (!row) return;
+        loadToolDetails(row.dataset.tool);
+      });
+    }
+
+    async function loadToolDetails(toolName) {
+      const container = document.getElementById('tool-detail-container');
+      container.innerHTML = '<div class="tool-detail-panel"><div class="loading">Loading details...</div></div>';
+
+      const calls = await fetch(`/api/tool-details/${encodeURIComponent(toolName)}`).then(r => r.json());
+
+      const panel = document.createElement('div');
+      panel.className = 'tool-detail-panel';
+
+      const header = `<h3>
+        <span>${toolName} — ${fmt(calls.length)} calls</span>
+        <span>
+          <button class="close-btn" onclick="exportToolCalls('${toolName}', ${JSON.stringify(calls).length > 5000000 ? '[]' : 'null'})">Export</button>
+          <button class="close-btn" onclick="this.closest('.tool-detail-panel').remove()">Close</button>
+        </span>
+      </h3>`;
+
+      // Stash calls for export
+      window._lastToolCalls = { toolName, calls };
+
+      let rows = '';
+      for (const c of calls.slice(0, 200)) {
+        const proj = (c.project || '').split('-').pop();
+        const time = fmtDateTime(c.timestamp);
+
+        if (toolName === 'Bash') {
+          rows += `<div class="detail-row">
+            ${c.description ? `<div class="detail-desc">${escapeHtml(c.description)}</div>` : ''}
+            <div class="detail-cmd">$ ${escapeHtml(c.command)}</div>
+            <div class="detail-meta">${time} &middot; ${proj}</div>
+          </div>`;
+        } else if (toolName === 'Read' || toolName === 'Edit' || toolName === 'Write') {
+          rows += `<div class="detail-row">
+            <div class="detail-path">${escapeHtml(c.file_path)}</div>
+            <div class="detail-meta">${time} &middot; ${proj}</div>
+          </div>`;
+        } else if (toolName === 'Grep') {
+          rows += `<div class="detail-row">
+            <div class="detail-cmd">/${escapeHtml(c.pattern)}/</div>
+            ${c.path ? `<div class="detail-path">${escapeHtml(c.path)}</div>` : ''}
+            ${c.glob ? `<div class="detail-desc">glob: ${escapeHtml(c.glob)}</div>` : ''}
+            <div class="detail-meta">${time} &middot; ${proj}</div>
+          </div>`;
+        } else if (toolName === 'Glob') {
+          rows += `<div class="detail-row">
+            <div class="detail-cmd">${escapeHtml(c.pattern)}</div>
+            ${c.path ? `<div class="detail-path">${escapeHtml(c.path)}</div>` : ''}
+            <div class="detail-meta">${time} &middot; ${proj}</div>
+          </div>`;
+        } else if (toolName === 'Agent') {
+          rows += `<div class="detail-row">
+            <div class="detail-desc">${escapeHtml(c.description)}</div>
+            ${c.subagent_type ? `<div class="detail-path">type: ${escapeHtml(c.subagent_type)}</div>` : ''}
+            <div class="detail-meta">${time} &middot; ${proj}</div>
+          </div>`;
+        } else {
+          rows += `<div class="detail-row">
+            <div class="detail-cmd">${escapeHtml(c.input || '')}</div>
+            <div class="detail-meta">${time} &middot; ${proj}</div>
+          </div>`;
+        }
+      }
+
+      if (calls.length > 200) {
+        rows += `<div class="detail-row detail-meta">...and ${calls.length - 200} more</div>`;
+      }
+
+      panel.innerHTML = header + rows;
+      container.innerHTML = '';
+      container.appendChild(panel);
+    }
+
+    function renderProjects(projects) {
+      const tbody = document.getElementById('projects-body');
+      if (!projects.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">No projects found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = projects.map(p => `
+        <tr>
+          <td>
+            ${(p.agents || []).map(a => `<span class="agent-badge">${a}</span>`).join('')}
+            <span class="project-badge">${p.shortName}</span><br>
+            <span class="session-id">${p.name}</span>
+          </td>
+          <td>${fmt(p.messages)}</td>
+          <td>${fmt(p.sessions)}</td>
+          <td>${fmtDateTime(p.lastSeen)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderHistory(history) {
+      // Get unique projects for tabs
+      const allProjects = [...new Set(history.map(h => h.project))];
+      const tabsEl = document.getElementById('history-tabs');
+
+      tabsEl.innerHTML = `<button class="tab active" data-project="all">All</button>` +
+        allProjects.map(p =>
+          `<button class="tab" data-project="${p}">${shortProject(p)}</button>`
+        ).join('');
+
+      const tbody = document.getElementById('history-table-body');
+
+      function render(filter) {
+        const filtered = filter === 'all' ? history : history.filter(h => h.project === filter);
+        // Show most recent first
+        const sorted = [...filtered].reverse();
+        tbody.innerHTML = sorted.map(h => `
+          <tr>
+            <td style="white-space:nowrap">${fmtDateTime(h.timestamp)}</td>
+            <td>${h.agent ? `<span class="agent-badge">${h.agent}</span>` : ''}<span class="project-badge">${shortProject(h.project)}</span></td>
+            <td class="prompt-text" title="${(h.display || '').replace(/"/g, '&quot;')}">${escapeHtml(h.display || '')}</td>
+            <td class="session-id">${(h.sessionId || '').slice(0, 8)}</td>
+          </tr>
+        `).join('');
+      }
+
+      tabsEl.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('tab')) return;
+        tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        render(e.target.dataset.project);
+      });
+
+      render('all');
+    }
+
+    function exportToolCalls() {
+      const { toolName, calls } = window._lastToolCalls || {};
+      if (!toolName || !calls) return;
+
+      let lines = [];
+      lines.push(`${toolName} — ${calls.length} calls`);
+      lines.push('='.repeat(50));
+      lines.push('');
+
+      for (const c of calls) {
+        const proj = (c.project || '').split('-').pop();
+        const time = fmtDateTime(c.timestamp);
+
+        if (toolName === 'Bash') {
+          if (c.description) lines.push(c.description);
+          lines.push(`$ ${c.command}`);
+        } else if (toolName === 'Read' || toolName === 'Edit' || toolName === 'Write') {
+          lines.push(c.file_path);
+        } else if (toolName === 'Grep') {
+          lines.push(`/${c.pattern}/`);
+          if (c.path) lines.push(`  path: ${c.path}`);
+          if (c.glob) lines.push(`  glob: ${c.glob}`);
+        } else if (toolName === 'Glob') {
+          lines.push(c.pattern);
+          if (c.path) lines.push(`  path: ${c.path}`);
+        } else if (toolName === 'Agent') {
+          lines.push(c.description);
+          if (c.subagent_type) lines.push(`  type: ${c.subagent_type}`);
+        } else {
+          lines.push(c.input || '(no input)');
+        }
+
+        lines.push(`  [${time} · ${proj}]`);
+        lines.push('');
+      }
+
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${toolName.toLowerCase()}-calls.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    load();
+  </script>
+</body>
+</html>
