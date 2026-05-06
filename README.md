@@ -15,7 +15,7 @@ Local dashboard for visualizing usage across **seven AI coding agents** — sess
 | **Gemini CLI** | `~/.gemini` | full | full | yes |
 | **OpenCode** | `~/.local/share/opencode` | full (SQLite) | full | yes |
 | **Kimi Code** | `~/.kimi` | partial (TurnBegin events) | partial | partial |
-| **Cursor** | `~/.cursor` | session metadata only (opaque blobs) | — | — |
+| **Cursor** | `~/Library/Application Support/Cursor/...` (auto-detected per OS) | full (SQLite `cursorDiskKV`) | full | partial |
 | **Antigravity** | `~/.gemini/antigravity` | session metadata only (protobuf) | — | — |
 
 OpenCode and Cursor read SQLite via the optional `better-sqlite3` dependency. If the prebuild fails on your platform the dashboard still works for the JSONL/JSON-based agents (Claude, Codex, Gemini, Kimi, Antigravity).
@@ -72,7 +72,7 @@ Open [http://localhost:3456](http://localhost:3456).
 | `GEMINI_DIR` | `~/.gemini` |
 | `OPENCODE_DIR` | `~/.local/share/opencode` |
 | `KIMI_DIR` | `~/.kimi` |
-| `CURSOR_DIR` | `~/.cursor` |
+| `CURSOR_DB` / `CURSOR_DIR` | macOS: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` · Linux: `~/.config/Cursor/User/globalStorage/state.vscdb` · Windows: `%APPDATA%/Cursor/User/globalStorage/state.vscdb` |
 | `ANTIGRAVITY_DIR` | `~/.gemini/antigravity` |
 
 ### Pricing (USD per 1M tokens)
@@ -97,7 +97,7 @@ OpenCode also reports actual `cost` per assistant message in its DB; that value 
 
 ## Notes per agent
 
-- **Cursor** stores chat content as opaque blobs in `store.db`; only session metadata (name, created time, message count) is shown. Token usage is not recoverable from local files.
+- **Cursor** stores chat history in `state.vscdb` under `Application Support/Cursor/User/globalStorage` (macOS), `~/.config/Cursor/...` (Linux), or `%APPDATA%/Cursor/...` (Windows). The dashboard reads the `cursorDiskKV` table directly: prompts, per-bubble token counts, tool calls (`toolFormerData`), and per-session model name from `composerData`. Override via `CURSOR_DB` (full path to `state.vscdb`) or `CURSOR_DIR` (directory containing it). Default rates are 0 because most Cursor users pay a flat subscription rather than per token; set `RATE_CURSOR_*` to estimate spend.
 - **Antigravity** writes conversations as binary protobuf (`*.pb`) in `~/.gemini/antigravity/conversations`. Without the `.proto` schema the dashboard reports session count and timestamps only.
 - **Kimi** logs are sparse in the local `wire.jsonl` — turn boundaries and user inputs are reliable; token counts depend on whether your Kimi version emits `TokenUsage`/`Usage` events.
 
