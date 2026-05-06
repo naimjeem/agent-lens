@@ -49,6 +49,12 @@
       padding: 16px;
       min-width: 0;
       box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover { transform: translateY(-2px); border-color: #45475a; }
+    button:focus-visible, .agent-tab:focus-visible, .tab:focus-visible {
+      outline: 2px solid #cba6f7;
+      outline-offset: 2px;
     }
     .card .label {
       font-size: 0.75rem;
@@ -224,7 +230,14 @@
       display: flex;
       gap: 4px;
       margin-bottom: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #45475a transparent;
     }
+    .tabs::-webkit-scrollbar { height: 6px; }
+    .tabs::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
     .tab {
       padding: 6px 14px;
       background: #1e1e2e;
@@ -234,6 +247,11 @@
       cursor: pointer;
       font-size: 0.75rem;
       font-family: inherit;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .tab.active {
       background: linear-gradient(135deg, #cba6f7, #89b4fa);
@@ -263,14 +281,39 @@
     .agent-tabs {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
       margin-bottom: 20px;
       padding: 10px;
-      background: #181825;
+      background: rgba(24, 24, 37, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border: 1px solid #313244;
       border-radius: 12px;
-      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 4px 20px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 8px;
+      z-index: 10;
     }
+    .agent-tabs .spacer { flex: 1 1 auto; }
+    .refresh-btn {
+      padding: 6px 12px;
+      background: #11111b;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      color: #a6adc8;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .refresh-btn:hover { color: #f5f5f7; border-color: #6c7086; transform: translateY(-1px); }
+    .refresh-btn.spinning .icon { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .refresh-btn .last { font-size: 0.65rem; color: #6c7086; }
     .agent-tab {
       padding: 6px 12px;
       background: #11111b;
@@ -371,6 +414,55 @@
       font-size: 0.65rem;
       margin-top: 2px;
     }
+
+    /* === Responsive === */
+    @media (max-width: 1024px) {
+      .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      body { padding: 14px; }
+      h1 { font-size: 1.2rem; padding-bottom: 10px; margin-bottom: 16px; }
+      h2 { font-size: 0.85rem; }
+      .summary-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px; }
+      .summary-panel { padding: 14px; border-radius: 10px; }
+      .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .metric { padding: 8px; }
+      .metric .metric-value { font-size: 1.1rem; }
+      .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .card { padding: 12px; }
+      .card .value { font-size: 1.2rem; }
+      .agent-tabs { padding: 8px; gap: 4px; }
+      .agent-tab { padding: 5px 9px; font-size: 0.7rem; }
+      .section { margin-bottom: 24px; }
+      .section table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        font-size: 0.72rem;
+      }
+      th, td { padding: 6px 8px; }
+      .prompt-text { max-width: 220px; }
+      .tool-name { min-width: 80px; font-size: 0.72rem; }
+      .bar { height: 12px; }
+      .tool-detail-panel { padding: 12px; max-height: 320px; }
+      .detail-row { font-size: 0.72rem; }
+      .detail-cmd, .detail-path { font-size: 0.7rem; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      h1 { font-size: 1.05rem; }
+      .cards { grid-template-columns: 1fr; }
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      .metric .metric-value { font-size: 1rem; }
+      .agent-tabs { border-radius: 8px; }
+      .agent-tab { padding: 4px 8px; font-size: 0.66rem; }
+      .agent-tab .dot { width: 5px; height: 5px; }
+      .summary-panel .panel-header { flex-wrap: wrap; }
+      .panel-date { font-size: 0.7rem; }
+      .summary-panel { padding: 12px; }
+      .prompt-text { max-width: 160px; }
+    }
   </style>
 </head>
 <body>
@@ -378,6 +470,13 @@
 
   <div id="agent-tabs" class="agent-tabs">
     <span class="loading">Loading agents...</span>
+  </div>
+  <div id="status-bar" style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:12px;font-size:0.72rem;color:#6c7086;">
+    <span id="last-updated">—</span>
+    <button id="refresh-btn" class="refresh-btn" title="Reload data" aria-label="Refresh">
+      <span class="icon">↻</span>
+      <span>Refresh</span>
+    </button>
   </div>
 
   <div id="summary-section" class="section">
@@ -432,6 +531,14 @@
 
   <script>
     const fmt = (n) => n != null ? n.toLocaleString() : '—';
+    const compact = (n) => {
+      if (n == null) return '—';
+      const a = Math.abs(n);
+      if (a >= 1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
+      if (a >= 1e6) return (n/1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
+      if (a >= 1e4) return (n/1e3).toFixed(1).replace(/\.?0+$/, '') + 'K';
+      return n.toLocaleString();
+    };
     const fmtDate = (ts) => {
       if (!ts) return '—';
       const d = new Date(ts);
@@ -443,6 +550,23 @@
       return d.toLocaleString('en-AU', {
         day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
       });
+    };
+    const fmtRelative = (ts) => {
+      if (!ts) return '—';
+      const t = new Date(ts).getTime();
+      if (isNaN(t)) return '—';
+      const diff = Date.now() - t;
+      const s = Math.floor(diff/1000);
+      if (s < 60) return s + 's ago';
+      const m = Math.floor(s/60);
+      if (m < 60) return m + 'm ago';
+      const h = Math.floor(m/60);
+      if (h < 24) return h + 'h ago';
+      const d = Math.floor(h/24);
+      if (d < 30) return d + 'd ago';
+      const mo = Math.floor(d/30);
+      if (mo < 12) return mo + 'mo ago';
+      return Math.floor(mo/12) + 'y ago';
     };
     const shortProject = (p) => {
       if (!p) return '—';
@@ -456,7 +580,27 @@
     async function load() {
       const agents = await fetch('/api/agents').then(r => r.json());
       renderAgentTabs(agents);
+      bindRefresh();
       await reload();
+    }
+
+    function bindRefresh() {
+      const btn = document.getElementById('refresh-btn');
+      if (!btn || btn._bound) return;
+      btn._bound = true;
+      btn.addEventListener('click', async () => {
+        btn.classList.add('spinning');
+        await reload();
+        btn.classList.remove('spinning');
+      });
+    }
+
+    function setLastUpdated() {
+      const el = document.getElementById('last-updated');
+      if (!el) return;
+      const ts = new Date();
+      el.textContent = 'Updated ' + ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      el.title = ts.toString();
     }
 
     let _agentTabsBound = false;
@@ -513,6 +657,7 @@
       renderTools(toolData);
       renderProjects(projects);
       renderHistory(history);
+      setLastUpdated();
     }
 
     function renderSummary(costData, stats) {
@@ -543,7 +688,7 @@
             <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
               <span class="model-rank" style="font-size:0.65rem;color:#a6adc8;min-width:16px">${i + 1}.</span>
               <span class="model-name" style="font-size:0.75rem;color:#cba6f7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${model}</span>
-              <span class="model-count" style="font-size:0.7rem;color:#a6adc8">${fmt(count)} responses</span>
+              <span class="model-count" style="font-size:0.7rem;color:#a6adc8" title="${fmt(count)}">${compact(count)} resp</span>
             </div>
           `).join('')}
         </div>`;
@@ -709,7 +854,7 @@
       const tools = data.tools || [];
       const container = document.getElementById('tool-calls');
       if (!tools.length) {
-        container.innerHTML = '<div class="loading">No tool calls found</div>';
+        container.innerHTML = '<div class="loading">No tool calls in this scope. Try a different agent or run more sessions.</div>';
         return;
       }
       const max = tools[0].count;
@@ -719,7 +864,7 @@
           <td style="width:100%">
             <div class="bar-container">
               <div class="bar" style="width: ${Math.max((t.count / max) * 100, 1)}%"></div>
-              <span class="bar-count">${fmt(t.count)}</span>
+              <span class="bar-count" title="${fmt(t.count)}">${compact(t.count)}</span>
             </div>
           </td>
         </tr>
@@ -824,30 +969,43 @@
           </td>
           <td>${fmt(p.messages)}</td>
           <td>${fmt(p.sessions)}</td>
-          <td>${fmtDateTime(p.lastSeen)}</td>
+          <td title="${fmtDateTime(p.lastSeen)}">${fmtRelative(p.lastSeen)}</td>
         </tr>
       `).join('');
     }
 
     function renderHistory(history) {
-      // Get unique projects for tabs
-      const allProjects = [...new Set(history.map(h => h.project))];
+      // Order tabs by project recency (newest activity first)
+      const projectLastSeen = {};
+      for (const h of history) {
+        const ts = h.timestamp || '';
+        if (!projectLastSeen[h.project] || ts > projectLastSeen[h.project]) {
+          projectLastSeen[h.project] = ts;
+        }
+      }
+      const allProjects = Object.keys(projectLastSeen).sort(
+        (a, b) => (projectLastSeen[b] || '').localeCompare(projectLastSeen[a] || '')
+      );
       const tabsEl = document.getElementById('history-tabs');
 
       tabsEl.innerHTML = `<button class="tab active" data-project="all">All</button>` +
         allProjects.map(p =>
-          `<button class="tab" data-project="${p}">${shortProject(p)}</button>`
+          `<button class="tab" data-project="${p}" title="${p}">${shortProject(p)}</button>`
         ).join('');
 
       const tbody = document.getElementById('history-table-body');
 
       function render(filter) {
         const filtered = filter === 'all' ? history : history.filter(h => h.project === filter);
-        // Show most recent first
-        const sorted = [...filtered].reverse();
+        if (!filtered.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="loading">No prompts yet for this view.</td></tr>';
+          return;
+        }
+        // History endpoint already returns newest first.
+        const sorted = filtered;
         tbody.innerHTML = sorted.map(h => `
           <tr>
-            <td style="white-space:nowrap">${fmtDateTime(h.timestamp)}</td>
+            <td style="white-space:nowrap" title="${fmtDateTime(h.timestamp)}">${fmtRelative(h.timestamp)}</td>
             <td>${h.agent ? `<span class="agent-badge">${h.agent}</span>` : ''}<span class="project-badge">${shortProject(h.project)}</span></td>
             <td class="prompt-text" title="${(h.display || '').replace(/"/g, '&quot;')}">${escapeHtml(h.display || '')}</td>
             <td class="session-id">${(h.sessionId || '').slice(0, 8)}</td>

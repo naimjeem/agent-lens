@@ -74,7 +74,7 @@ app.get("/api/history", async (req, res) => {
         project: e.project,
         sessionId: e.sessionId,
       }))
-      .sort((a, b) => (a.timestamp || "").localeCompare(b.timestamp || ""));
+      .sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
     res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -115,7 +115,7 @@ app.get("/api/projects", async (req, res) => {
         lastSeen: d.lastSeen,
         agents: [...d.agents],
       }))
-      .sort((a, b) => b.messages - a.messages);
+      .sort((a, b) => (b.lastSeen || "").localeCompare(a.lastSeen || ""));
     res.json(out);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -235,7 +235,7 @@ app.get("/api/daily-costs", async (req, res) => {
     }
 
     const days = Object.keys(daily)
-      .sort()
+      .sort((a, b) => b.localeCompare(a))
       .map((date) => {
         const d = daily[date];
         const total = d.cost + d.providedCost;
