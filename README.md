@@ -36,6 +36,14 @@ OpenCode and Cursor read SQLite via the optional `better-sqlite3` dependency. If
 - One or more of the supported agents installed locally
 - Works on **macOS, Linux, and Windows**. Default data directories are auto-detected per OS.
 
+### Platform support
+
+The dashboard runs on macOS, Linux, and Windows. Path resolution per agent:
+
+- **Verified**: macOS — actively tested against real installs.
+- **By convention**: Linux/Windows — adapters use `os.homedir()` + the agent's documented dotfile, or the standard Electron `app.getPath('userData')` location for IDE-style agents (Cursor, Copilot via VS Code, Antigravity). These match each agent's published behavior; report mismatches via issue with the actual path your install uses.
+- **Always overridable**: every adapter accepts an env var to point at any path you want.
+
 ### Platform-specific defaults
 
 | Agent | macOS | Linux | Windows |
@@ -43,7 +51,7 @@ OpenCode and Cursor read SQLite via the optional `better-sqlite3` dependency. If
 | Claude | `~/.claude` | `~/.claude` | `%USERPROFILE%\.claude` |
 | Codex | `~/.codex` | `~/.codex` | `%USERPROFILE%\.codex` |
 | Gemini | `~/.gemini` | `~/.gemini` | `%USERPROFILE%\.gemini` |
-| OpenCode | `~/.local/share/opencode` | `$XDG_DATA_HOME/opencode` or `~/.local/share/opencode` | `%LOCALAPPDATA%\opencode` |
+| OpenCode | `~/.local/share/opencode` | `$XDG_DATA_HOME/opencode` or `~/.local/share/opencode` | `%LOCALAPPDATA%\opencode` → `%APPDATA%\opencode` → `~/.local/share/opencode` (first existing) |
 | Kimi | `~/.kimi` | `~/.kimi` | `%USERPROFILE%\.kimi` |
 | Cursor | `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` | `~/.config/Cursor/User/globalStorage/state.vscdb` | `%APPDATA%\Cursor\User\globalStorage\state.vscdb` |
 | Antigravity | `~/.gemini/antigravity` | `~/.gemini/antigravity` | `%USERPROFILE%\.gemini\antigravity` |

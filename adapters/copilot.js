@@ -13,37 +13,39 @@ const VSCODE_FLAVORS = [
   "Cursor",
 ];
 
-function vscodeRoots() {
+function appBase() {
   const home = os.homedir();
-  const roots = [];
-
-  if (process.env.COPILOT_VSCODE_ROOT) {
-    roots.push(process.env.COPILOT_VSCODE_ROOT);
-    return roots;
-  }
-
-  const appBases = [];
   if (process.platform === "darwin") {
-    appBases.push(path.join(home, "Library", "Application Support"));
-  } else if (process.platform === "win32") {
-    const roaming = process.env.APPDATA || path.join(home, "AppData", "Roaming");
-    appBases.push(roaming);
-  } else {
-    appBases.push(path.join(home, ".config"));
+    return path.join(home, "Library", "Application Support");
   }
-
-  for (const base of appBases) {
-    for (const flavor of VSCODE_FLAVORS) {
-      const userDir = path.join(base, flavor, "User");
-      if (fs.existsSync(userDir)) roots.push(userDir);
-    }
+  if (process.platform === "win32") {
+    return process.env.APPDATA || path.join(home, "AppData", "Roaming");
   }
+  return path.join(home, ".config");
+}
 
-  return roots;
+function defaultRoot() {
+  return path.join(appBase(), "Code", "User");
+}
+
+function vscodeRoots() {
+  if (process.env.COPILOT_VSCODE_ROOT) return [process.env.COPILOT_VSCODE_ROOT];
+  if (process.env.COPILOT_DIR) return [process.env.COPILOT_DIR];
+
+  const base = appBase();
+  const found = [];
+  for (const flavor of VSCODE_FLAVORS) {
+    const userDir = path.join(base, flavor, "User");
+    if (fs.existsSync(userDir)) found.push(userDir);
+  }
+  return found.length ? found : [defaultRoot()];
 }
 
 function dataDir() {
-  return process.env.COPILOT_DIR || vscodeRoots()[0] || "(no VS Code install)";
+  if (process.env.COPILOT_DIR) return process.env.COPILOT_DIR;
+  if (process.env.COPILOT_VSCODE_ROOT) return process.env.COPILOT_VSCODE_ROOT;
+  const found = vscodeRoots();
+  return found[0];
 }
 
 function enabled() {

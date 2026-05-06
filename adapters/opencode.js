@@ -6,21 +6,29 @@ const { loadSqlite, tsFromUnix } = require("./util");
 const NAME = "opencode";
 const DISPLAY = "OpenCode";
 
-function defaultDir() {
-  if (process.env.XDG_DATA_HOME) {
-    return path.join(process.env.XDG_DATA_HOME, "opencode");
-  }
+function candidates() {
+  if (process.env.OPENCODE_DIR) return [process.env.OPENCODE_DIR];
+  const home = os.homedir();
+  const list = [];
+  if (process.env.XDG_DATA_HOME) list.push(path.join(process.env.XDG_DATA_HOME, "opencode"));
   if (process.platform === "win32") {
-    const local =
-      process.env.LOCALAPPDATA ||
-      path.join(os.homedir(), "AppData", "Local");
-    return path.join(local, "opencode");
+    const local = process.env.LOCALAPPDATA || path.join(home, "AppData", "Local");
+    const roaming = process.env.APPDATA || path.join(home, "AppData", "Roaming");
+    list.push(path.join(local, "opencode"));
+    list.push(path.join(roaming, "opencode"));
+    list.push(path.join(home, ".local", "share", "opencode"));
+  } else {
+    list.push(path.join(home, ".local", "share", "opencode"));
   }
-  return path.join(os.homedir(), ".local", "share", "opencode");
+  return list;
 }
 
 function dataDir() {
-  return process.env.OPENCODE_DIR || defaultDir();
+  const list = candidates();
+  for (const c of list) {
+    if (fs.existsSync(path.join(c, "opencode.db"))) return c;
+  }
+  return list[0];
 }
 
 function dbPath() {
