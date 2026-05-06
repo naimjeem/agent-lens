@@ -5,8 +5,9 @@ const opencode = require("./opencode");
 const kimi = require("./kimi");
 const cursor = require("./cursor");
 const antigravity = require("./antigravity");
+const copilot = require("./copilot");
 
-const ADAPTERS = [claude, codex, gemini, opencode, kimi, cursor, antigravity];
+const ADAPTERS = [claude, codex, gemini, opencode, kimi, cursor, antigravity, copilot];
 
 function getAdapter(name) {
   return ADAPTERS.find((a) => a.name === name);

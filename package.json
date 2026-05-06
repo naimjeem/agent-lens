@@ -1,7 +1,7 @@
 {
   "name": "agent-lens",
   "version": "2.0.0",
-  "description": "Multi-agent usage dashboard for Claude Code, Codex, Gemini, OpenCode, Kimi, Cursor, and Antigravity",
+  "description": "Multi-agent usage dashboard for Claude Code, Codex, Gemini, OpenCode, Kimi, Cursor, Antigravity, and GitHub Copilot",
   "private": true,
   "bin": {
     "agent-lens": "server.js"

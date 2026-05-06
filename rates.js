@@ -55,6 +55,13 @@ const PER_AGENT = {
     cacheCreate: rate("RATE_ANTIGRAVITY_CACHE_CREATE", 0),
     label: "Antigravity stores conversations as protobuf — token usage not derivable",
   },
+  copilot: {
+    input: rate("RATE_COPILOT_INPUT", 0),
+    output: rate("RATE_COPILOT_OUTPUT", 0),
+    cacheRead: rate("RATE_COPILOT_CACHE_READ", 0),
+    cacheCreate: rate("RATE_COPILOT_CACHE_CREATE", 0),
+    label: "GitHub Copilot bills via subscription; chat session JSON has no per-request token counts",
+  },
 };
 
 function rateFor(agent) {
