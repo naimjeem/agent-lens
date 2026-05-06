@@ -54,7 +54,10 @@ function projectFromUris(uris) {
     if (typeof u !== "string") continue;
     if (u.startsWith("file://")) {
       try {
-        const decoded = decodeURIComponent(u.replace(/^file:\/\//, ""));
+        let decoded = decodeURIComponent(u.replace(/^file:\/\//, ""));
+        if (process.platform === "win32" && /^\/[A-Za-z]:/.test(decoded)) {
+          decoded = decoded.slice(1);
+        }
         return decoded;
       } catch {
         return u;

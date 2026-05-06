@@ -33,6 +33,21 @@ OpenCode and Cursor read SQLite via the optional `better-sqlite3` dependency. If
 
 - Node.js 18+
 - One or more of the supported agents installed locally
+- Works on **macOS, Linux, and Windows**. Default data directories are auto-detected per OS.
+
+### Platform-specific defaults
+
+| Agent | macOS | Linux | Windows |
+|-------|-------|-------|---------|
+| Claude | `~/.claude` | `~/.claude` | `%USERPROFILE%\.claude` |
+| Codex | `~/.codex` | `~/.codex` | `%USERPROFILE%\.codex` |
+| Gemini | `~/.gemini` | `~/.gemini` | `%USERPROFILE%\.gemini` |
+| OpenCode | `~/.local/share/opencode` | `$XDG_DATA_HOME/opencode` or `~/.local/share/opencode` | `%LOCALAPPDATA%\opencode` |
+| Kimi | `~/.kimi` | `~/.kimi` | `%USERPROFILE%\.kimi` |
+| Cursor | `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` | `~/.config/Cursor/User/globalStorage/state.vscdb` | `%APPDATA%\Cursor\User\globalStorage\state.vscdb` |
+| Antigravity | `~/.gemini/antigravity` | `~/.gemini/antigravity` | `%USERPROFILE%\.gemini\antigravity` |
+
+Override any of these with `CLAUDE_DIR`, `CODEX_DIR`, `GEMINI_DIR`, `OPENCODE_DIR`, `KIMI_DIR`, `CURSOR_DIR` (or `CURSOR_DB` for a specific `.vscdb` file), `ANTIGRAVITY_DIR`.
 
 ## Quick start
 

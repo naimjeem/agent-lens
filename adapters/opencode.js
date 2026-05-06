@@ -5,10 +5,22 @@ const { loadSqlite, tsFromUnix } = require("./util");
 
 const NAME = "opencode";
 const DISPLAY = "OpenCode";
-const DEFAULT_DIR = path.join(os.homedir(), ".local", "share", "opencode");
+
+function defaultDir() {
+  if (process.env.XDG_DATA_HOME) {
+    return path.join(process.env.XDG_DATA_HOME, "opencode");
+  }
+  if (process.platform === "win32") {
+    const local =
+      process.env.LOCALAPPDATA ||
+      path.join(os.homedir(), "AppData", "Local");
+    return path.join(local, "opencode");
+  }
+  return path.join(os.homedir(), ".local", "share", "opencode");
+}
 
 function dataDir() {
-  return process.env.OPENCODE_DIR || DEFAULT_DIR;
+  return process.env.OPENCODE_DIR || defaultDir();
 }
 
 function dbPath() {
