@@ -71,7 +71,7 @@ async function getEvents(emit) {
 
   let messages;
   try {
-    messages = db.prepare("SELECT id, session_id, time_created, data FROM message").all();
+    messages = db.prepare("SELECT id, session_id, time_created, data FROM message").iterate();
   } catch (err) {
     db.close();
     return;
@@ -127,7 +127,7 @@ async function getEvents(emit) {
       .prepare(
         "SELECT message_id, session_id, time_created, data FROM part WHERE data LIKE '%\"type\":\"tool\"%'",
       )
-      .all();
+      .iterate();
   } catch {
     parts = [];
   }
