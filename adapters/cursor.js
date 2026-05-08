@@ -96,7 +96,7 @@ async function getEvents(emit) {
   try {
     const composers = db
       .prepare("SELECT key, value FROM cursorDiskKV WHERE key LIKE 'composerData:%'")
-      .all();
+      .iterate();
     for (const row of composers) {
       let c;
       try {
