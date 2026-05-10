@@ -6,6 +6,7 @@ const path = require("path");
 
 const { ADAPTERS, getAdapter, listAdapters, collectEvents } = require("./adapters");
 const { PER_AGENT, costFor } = require("./rates");
+const { refreshIfStale: refreshPricing, snapshot: pricingSnapshot } = require("./pricing");
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3456", 10);
@@ -34,6 +35,19 @@ function dayOf(ts) {
 
 app.get("/api/agents", (req, res) => {
   res.json(listAdapters());
+});
+
+app.get("/api/pricing", async (req, res) => {
+  try {
+    if (req.query.refresh === "1") {
+      await refreshPricing();
+    } else {
+      refreshPricing();
+    }
+    res.json(pricingSnapshot());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get("/api/rates", (req, res) => {
@@ -185,6 +199,7 @@ app.get("/api/tool-details/:toolName", async (req, res) => {
 app.get("/api/daily-costs", async (req, res) => {
   try {
     const agent = req.query.agent || null;
+    await refreshPricing();
     const events = await getEvents(agent);
     const daily = {};
 
@@ -226,7 +241,7 @@ app.get("/api/daily-costs", async (req, res) => {
         if (typeof e.cost === "number" && e.cost > 0) {
           d.providedCost += e.cost;
         } else {
-          d.cost += costFor(e.agent, tk);
+          d.cost += costFor(e.agent, tk, e.model);
         }
       }
       if (e.type === "tool") {
@@ -310,6 +325,7 @@ app.get("/api/sessions", (req, res) => {
 
 app.listen(PORT, () => {
   const enabled = listAdapters().filter((a) => a.enabled);
+  refreshPricing();
   console.log(`Agent Lens dashboard running at http://localhost:${PORT}`);
   console.log(`Detected agents: ${enabled.map((a) => a.name).join(", ") || "none"}`);
   for (const a of listAdapters()) {

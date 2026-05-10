@@ -1,3 +1,5 @@
+const { priceFor } = require("./pricing");
+
 function rate(envKey, def) {
   const v = process.env[envKey];
   if (v == null || v === "") return def / 1e6;
@@ -68,8 +70,9 @@ function rateFor(agent) {
   return PER_AGENT[agent] || PER_AGENT.claude;
 }
 
-function costFor(agent, tokens) {
-  const r = rateFor(agent);
+function costFor(agent, tokens, model) {
+  const live = model ? priceFor(agent, model) : null;
+  const r = live || rateFor(agent);
   return (
     (tokens.input || 0) * r.input +
     (tokens.output || 0) * r.output +
