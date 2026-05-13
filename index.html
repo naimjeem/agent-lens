@@ -929,6 +929,62 @@
 
     /* Offset handled by JS stickyOffset(); CSS scroll-margin not used */
 
+    /* === Site footer === */
+    .site-footer {
+      margin: 32px -24px 0;
+      padding: 20px 24px 28px;
+      border-top: 1px solid var(--line);
+      background:
+        radial-gradient(800px 200px at 50% 0%, rgba(203,166,247,0.05), transparent 70%),
+        var(--bg);
+    }
+    .site-footer-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.72rem;
+      color: var(--text-2);
+    }
+    .site-footer-brand {
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .site-footer-sep { color: var(--line-2); }
+    .site-footer-meta { color: var(--muted); }
+    .site-footer-spacer { flex: 1 1 auto; }
+    .site-footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 0.72rem;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .site-footer-link:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: var(--bg-2);
+      transform: translateY(-1px);
+    }
+    .site-footer-link svg { display: block; flex-shrink: 0; }
+    @media (max-width: 768px) {
+      .site-footer { margin: 24px -14px 0; padding: 16px 14px 20px; }
+      .site-footer-spacer { display: none; }
+    }
+    @media (max-width: 480px) {
+      .site-footer { margin: 20px -10px 0; padding: 14px 10px 18px; }
+      .site-footer-meta { display: none; }
+    }
+
     /* === Collapsible lists === */
     .list-host { position: relative; }
     .list-host.collapsed::after {
@@ -1134,6 +1190,22 @@
     </div>
     <div class="list-footer" id="history-footer"></div>
   </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span class="site-footer-brand">Agent Lens</span>
+      <span class="site-footer-sep">·</span>
+      <span class="site-footer-meta">Local dashboard for multiple AI coding agents</span>
+      <span class="site-footer-spacer"></span>
+      <a class="site-footer-link" href="https://github.com/naimjeem/agent-lens" target="_blank" rel="noopener noreferrer" title="View source on GitHub">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.
+
+      <a class="site-footer-link" href="https://naimjeem.me" target="_blank" rel="noopener noreferrer" title="Maintainer site">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13"/><path d="M8 1.5c2 2 3 4 3 6.5s-1 4.5-3 6.5c-2-2-3-4-3-6.5s1-4.5 3-6.5z"/></svg>
+        <span>naimjeem.me</span>
+      </a>
+    </div>
+  </footer>
 
   <script>
     const fmt = (n) => n != null ? n.toLocaleString() : '—';
