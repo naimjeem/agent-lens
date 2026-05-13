@@ -319,6 +319,83 @@ app.get("/api/daily-costs", async (req, res) => {
   }
 });
 
+app.get("/api/metrics", async (req, res) => {
+  try {
+    const agent = req.query.agent || null;
+    await refreshPricing();
+    const events = await getEvents(agent);
+
+    const hourly = Array(24).fill(0);
+    const weekday = Array(7).fill(0);
+    const agentTotals = {};
+    const modelTotals = {};
+    const agentCost = {};
+    const sessionsByAgent = {};
+    const dailyByAgent = {};
+    let totalEvents = 0;
+
+    for (const e of events) {
+      totalEvents++;
+      const ts = e.timestamp;
+      if (ts) {
+        const d = new Date(ts);
+        if (!isNaN(d.getTime())) {
+          hourly[d.getHours()]++;
+          weekday[d.getDay()]++;
+        }
+      }
+      const day = dayOf(ts);
+
+      if (e.type === "user") {
+        agentTotals[e.agent] = (agentTotals[e.agent] || 0) + 1;
+        if (!sessionsByAgent[e.agent]) sessionsByAgent[e.agent] = new Set();
+        sessionsByAgent[e.agent].add(e.sessionId);
+      }
+      if (e.type === "assistant") {
+        const model = e.model || "unknown";
+        modelTotals[model] = (modelTotals[model] || 0) + 1;
+        const tk = e.tokens || {};
+        const c = typeof e.cost === "number" && e.cost > 0 ? e.cost : costFor(e.agent, tk, e.model);
+        agentCost[e.agent] = (agentCost[e.agent] || 0) + c;
+
+        if (day) {
+          if (!dailyByAgent[day]) dailyByAgent[day] = {};
+          dailyByAgent[day][e.agent] = (dailyByAgent[day][e.agent] || 0) + c;
+        }
+      }
+    }
+
+    const agents = Object.entries(agentTotals)
+      .map(([name, messages]) => ({
+        name,
+        messages,
+        sessions: sessionsByAgent[name] ? sessionsByAgent[name].size : 0,
+        cost: Math.round((agentCost[name] || 0) * 100) / 100,
+      }))
+      .sort((a, b) => b.messages - a.messages);
+
+    const models = Object.entries(modelTotals)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const dailyAgentSeries = Object.keys(dailyByAgent)
+      .sort()
+      .map((date) => ({ date, agents: dailyByAgent[date] }));
+
+    res.json({
+      hourly,
+      weekday,
+      agents,
+      models,
+      dailyAgentSeries,
+      totalEvents,
+      agentFilter: agent,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/sessions", (req, res) => {
   res.json([]);
 });

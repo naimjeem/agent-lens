@@ -5,15 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Lens — Multi-Agent Usage Dashboard</title>
   <style>
+    :root {
+      --bg: #11111b;
+      --bg-2: #181825;
+      --surface: #1e1e2e;
+      --surface-2: #313244;
+      --line: #313244;
+      --line-2: #45475a;
+      --muted: #6c7086;
+      --text: #cdd6f4;
+      --text-2: #a6adc8;
+      --text-strong: #f5f5f7;
+      --accent: #cba6f7;
+      --accent-2: #89b4fa;
+      --accent-3: #74c7ec;
+      --green: #a6e3a1;
+      --amber: #f9e2af;
+      --pink: #f5c2e7;
+      --red: #f38ba8;
+      --radius-sm: 6px;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --shadow-1: 0 1px 0 rgba(255,255,255,0.02) inset;
+      --shadow-2: 0 6px 24px rgba(0,0,0,0.25);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: auto; }
     body {
       font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
       background:
         radial-gradient(1200px 600px at 0% -10%, rgba(203, 166, 247, 0.08), transparent 60%),
         radial-gradient(1000px 500px at 100% -20%, rgba(137, 180, 250, 0.06), transparent 60%),
-        #11111b;
-      color: #cdd6f4;
-      padding: 24px;
+        var(--bg);
+      color: var(--text);
+      padding: 0 24px 24px;
       line-height: 1.5;
       min-height: 100vh;
     }
@@ -415,6 +440,83 @@
       margin-top: 2px;
     }
 
+    /* === Charts === */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .chart-card {
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+    }
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-title {
+      font-size: 0.75rem;
+      color: #a6adc8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chart-title .chart-sub { font-size: 0.65rem; color: #6c7086; text-transform: none; letter-spacing: 0; }
+    .chart-host { width: 100%; }
+    .chart-svg {
+      width: 100%;
+      height: 180px;
+      display: block;
+      overflow: visible;
+    }
+    .chart-svg text {
+      fill: #6c7086;
+      font-family: 'SF Mono','Cascadia Code','Fira Code',Consolas,monospace;
+      font-size: 11px;
+    }
+    .chart-svg .grid { stroke: #313244; stroke-width: 1; shape-rendering: crispEdges; }
+    .chart-svg .axis { stroke: #45475a; stroke-width: 1; }
+    .chart-svg .line { fill: none; stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+    .chart-svg .area { opacity: 0.18; }
+    .chart-svg .dot { fill: #cba6f7; }
+    .chart-svg .bar { transition: opacity 0.15s ease; }
+    .chart-svg .bar:hover { opacity: 0.8; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: #a6adc8;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .donut-wrap {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .donut-wrap svg { flex: 0 0 160px; height: 160px; }
+    .donut-wrap .legend { flex: 1 1 auto; flex-direction: column; gap: 6px; margin-top: 0; }
+    .donut-wrap .legend-item { justify-content: space-between; width: 100%; }
+    .donut-wrap .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .donut-wrap .legend-val { color: #6c7086; font-variant-numeric: tabular-nums; }
+    @media (max-width: 768px) {
+      .charts-grid { grid-template-columns: 1fr; gap: 12px; }
+      .chart-card { padding: 12px; }
+      .chart-svg { height: 160px; }
+      .donut-wrap { flex-direction: column; }
+      .donut-wrap svg { flex: 0 0 140px; height: 140px; }
+    }
+
     /* === Responsive === */
     @media (max-width: 1024px) {
       .metric-grid { grid-template-columns: repeat(2, 1fr); }
@@ -450,7 +552,7 @@
       .detail-cmd, .detail-path { font-size: 0.7rem; }
     }
     @media (max-width: 480px) {
-      body { padding: 10px; }
+      body { padding: 0 10px 10px; }
       h1 { font-size: 1.05rem; }
       .cards { grid-template-columns: 1fr; }
       .metric-grid { grid-template-columns: 1fr 1fr; }
@@ -463,68 +565,382 @@
       .summary-panel { padding: 12px; }
       .prompt-text { max-width: 160px; }
     }
+
+    /* === Topbar === */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(17, 17, 27, 0.78);
+      backdrop-filter: saturate(160%) blur(14px);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+      border-bottom: 1px solid var(--line);
+      margin: 0 -24px 16px;
+      padding: 12px 24px 10px;
+    }
+    .topbar-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: var(--bg);
+      font-size: 0.9rem;
+      box-shadow: 0 4px 14px rgba(203,166,247,0.25);
+      flex-shrink: 0;
+    }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+    .brand-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.01em;
+    }
+    .brand-sub {
+      font-size: 0.62rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .kpi-strip {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .kpi-pill {
+      padding: 5px 11px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.72rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      transition: border-color 0.15s ease;
+    }
+    .kpi-pill:hover { border-color: var(--line-2); }
+    .kpi-pill .k-label { color: var(--text-2); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-pill .k-val { color: var(--text-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .kpi-pill .k-trend { font-size: 0.62rem; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+    .kpi-pill .k-trend.up { color: var(--green); background: rgba(166,227,161,0.13); }
+    .kpi-pill .k-trend.down { color: var(--red); background: rgba(243,139,168,0.13); }
+    .kpi-pill .k-trend.flat { color: var(--muted); background: var(--surface-2); }
+    .topbar .topbar-spacer { flex: 1 1 auto; }
+    .section-nav-row {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-2) transparent;
+    }
+    .section-nav-row::-webkit-scrollbar { height: 4px; }
+    .section-nav-row::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 2px; }
+
+    /* Adjust legacy agent-tabs to sit below topbar */
+    .agent-tabs {
+      position: sticky;
+      top: 64px;
+      z-index: 25;
+    }
+    .agent-tabs .section-nav {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .nav-pill {
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-2);
+      font-size: 0.7rem;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+    .nav-pill:hover { color: var(--text); background: var(--surface); }
+    .nav-pill.active { color: var(--accent); background: rgba(203,166,247,0.1); border-color: rgba(203,166,247,0.2); }
+    @media (max-width: 768px) {
+      .agent-tabs { top: 56px; }
+      .agent-tabs .section-nav { display: none; }
+      .topbar { padding: 10px 14px 8px; margin: 0 -14px 12px; }
+      .brand-sub { display: none; }
+    }
+    @media (max-width: 480px) {
+      .topbar { padding: 8px 10px 6px; margin: 0 -10px 10px; }
+      .kpi-pill { padding: 4px 8px; font-size: 0.66rem; }
+      .kpi-pill .k-label { display: none; }
+    }
+
+    /* === Skeleton === */
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s linear infinite;
+      border-radius: 4px;
+      color: transparent !important;
+      display: inline-block;
+    }
+    .skeleton-row { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; }
+    .skeleton-row:last-child { border-bottom: none; }
+    .sk-block { height: 14px; }
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton { animation: none; background: var(--surface); }
+      .refresh-btn.spinning .icon { animation: none; }
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: 0.001s !important; animation-duration: 0.001s !important; }
+    }
+
+    /* === Section headings === */
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .section-head h2 { margin: 0; }
+    .section-head .count-badge {
+      font-size: 0.64rem;
+      padding: 2px 8px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--text-2);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .section-head .head-spacer { flex: 1; }
+    .head-action {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .head-action input,
+    .head-action select {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 0.74rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .head-action input::placeholder { color: var(--muted); }
+    .head-action input:focus,
+    .head-action select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(203,166,247,0.18);
+    }
+    .head-action input { width: 220px; max-width: 100%; }
+
+    /* === Table polish === */
+    table { border-collapse: separate; border-spacing: 0; }
+    thead th {
+      position: sticky;
+      top: 110px;
+      background: var(--bg);
+      z-index: 2;
+    }
+    .section table tbody tr:nth-child(even) td { background: rgba(30,30,46,0.35); }
+    .section table tbody tr:hover td { background: var(--surface); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    @media (max-width: 768px) {
+      thead th { top: 0; }
+    }
+
+    /* === Empty state === */
+    .empty {
+      text-align: center;
+      padding: 36px 16px;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 1.8rem; margin-bottom: 8px; opacity: 0.55; }
+    .empty-msg { font-size: 0.85rem; color: var(--text-2); margin-bottom: 4px; }
+    .empty-hint { font-size: 0.7rem; color: var(--muted); }
+
+    /* === Copy button === */
+    .copy-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+    }
+    tr:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { color: var(--text); background: var(--surface-2); }
+    .copy-btn.copied { color: var(--green); opacity: 1; }
+
+    /* === Focus rings === */
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    .nav-pill:focus-visible,
+    .agent-tab:focus-visible,
+    .tab:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Offset handled by JS stickyOffset(); CSS scroll-margin not used */
   </style>
 </head>
 <body>
-  <h1>Agent Lens — Multi-Agent Usage Dashboard</h1>
+  <header class="topbar" role="banner">
+    <div class="topbar-row">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">AL</div>
+        <div class="brand-text">
+          <span class="brand-name">Agent Lens</span>
+          <span class="brand-sub">Multi-agent usage dashboard</span>
+        </div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div id="kpi-strip" class="kpi-strip" aria-label="Key metrics">
+        <span class="kpi-pill"><span class="skeleton sk-block" style="width:80px"></span></span>
+        <span class="kpi-pill"><span class="skeleton sk-block" style="width:80px"></span></span>
+        <span class="kpi-pill"><span class="skeleton sk-block" style="width:80px"></span></span>
+      </div>
+      <button id="refresh-btn" class="refresh-btn" title="Reload data" aria-label="Refresh">
+        <span class="icon">↻</span>
+        <span>Refresh</span>
+        <span id="last-updated" class="last">—</span>
+      </button>
+    </div>
+    <nav class="section-nav-row" aria-label="Section navigation">
+      <a class="nav-pill" href="#overview" data-target="overview">Overview</a>
+      <a class="nav-pill" href="#cache" data-target="cache">Cache</a>
+      <a class="nav-pill" href="#charts" data-target="charts">Charts</a>
+      <a class="nav-pill" href="#costs" data-target="costs">Costs</a>
+      <a class="nav-pill" href="#tools" data-target="tools">Tools</a>
+      <a class="nav-pill" href="#projects" data-target="projects">Projects</a>
+      <a class="nav-pill" href="#history" data-target="history">History</a>
+    </nav>
+  </header>
 
-  <div id="agent-tabs" class="agent-tabs">
-    <span class="loading">Loading agents...</span>
-  </div>
-  <div id="status-bar" style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:12px;font-size:0.72rem;color:#6c7086;">
-    <span id="last-updated">—</span>
-    <button id="refresh-btn" class="refresh-btn" title="Reload data" aria-label="Refresh">
-      <span class="icon">↻</span>
-      <span>Refresh</span>
-    </button>
+  <nav id="agent-tabs" class="agent-tabs" aria-label="Agent filter">
+    <span class="loading">Loading agents…</span>
+  </nav>
+
+  <div id="overview" class="section" data-section="overview">
+    <div class="skeleton-row" aria-hidden="true">
+      <span class="skeleton sk-block" style="width:30%;height:120px"></span>
+      <span class="skeleton sk-block" style="width:30%;height:120px"></span>
+    </div>
   </div>
 
-  <div id="summary-section" class="section">
-    <div class="loading">Loading...</div>
-  </div>
-
-  <div class="section">
-    <h2>Cache Performance</h2>
+  <div class="section" id="cache">
+    <div class="section-head">
+      <h2>Cache Performance</h2>
+      <span id="cache-badge" class="count-badge skeleton sk-block" style="width:60px">&nbsp;</span>
+    </div>
     <div id="cache-cards" class="cards">
-      <div class="card"><div class="label">Loading...</div></div>
+      <div class="card"><div class="label skeleton sk-block" style="width:80%;height:12px"></div><div class="value skeleton sk-block" style="width:60%;height:24px;margin-top:6px"></div></div>
+      <div class="card"><div class="label skeleton sk-block" style="width:80%;height:12px"></div><div class="value skeleton sk-block" style="width:60%;height:24px;margin-top:6px"></div></div>
+      <div class="card"><div class="label skeleton sk-block" style="width:80%;height:12px"></div><div class="value skeleton sk-block" style="width:60%;height:24px;margin-top:6px"></div></div>
+      <div class="card"><div class="label skeleton sk-block" style="width:80%;height:12px"></div><div class="value skeleton sk-block" style="width:60%;height:24px;margin-top:6px"></div></div>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Daily Cost &amp; Cache</h2>
+  <div class="section" id="charts">
+    <div class="section-head">
+      <h2>Charts &amp; Metrics</h2>
+      <span id="charts-badge" class="count-badge">visualizations</span>
+    </div>
+    <div id="charts-grid" class="charts-grid">
+      <div class="chart-card wide"><div class="skeleton sk-block" style="width:100%;height:220px"></div></div>
+    </div>
+  </div>
+
+  <div class="section" id="costs">
+    <div class="section-head">
+      <h2>Daily Cost &amp; Cache</h2>
+      <span id="costs-badge" class="count-badge skeleton sk-block" style="width:60px">&nbsp;</span>
+    </div>
     <div id="daily-costs">
-      <div class="loading">Loading...</div>
+      <div class="skeleton sk-block" style="width:100%;height:180px"></div>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Tool Calls</h2>
+  <div class="section" id="tools">
+    <div class="section-head">
+      <h2>Tool Calls</h2>
+      <span id="tools-badge" class="count-badge skeleton sk-block" style="width:60px">&nbsp;</span>
+    </div>
     <div id="tool-calls">
-      <div class="loading">Loading...</div>
+      <div class="skeleton sk-block" style="width:100%;height:140px"></div>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Project Activity</h2>
+  <div class="section" id="projects">
+    <div class="section-head">
+      <h2>Project Activity</h2>
+      <span id="projects-badge" class="count-badge skeleton sk-block" style="width:60px">&nbsp;</span>
+      <div class="head-spacer"></div>
+      <div class="head-action">
+        <input id="project-search" type="search" placeholder="Search projects…" aria-label="Search projects">
+      </div>
+    </div>
     <table>
       <thead>
-        <tr><th>Project</th><th>Messages</th><th>Sessions</th><th>Last Active</th></tr>
+        <tr><th>Project</th><th class="num">Messages</th><th class="num">Sessions</th><th>Last Active</th></tr>
       </thead>
       <tbody id="projects-body">
-        <tr><td colspan="4" class="loading">Loading...</td></tr>
+        <tr><td colspan="4"><div class="skeleton sk-block" style="width:100%;height:60px"></div></td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="section">
-    <h2>Prompt History</h2>
+  <div class="section" id="history">
+    <div class="section-head">
+      <h2>Prompt History</h2>
+      <span id="history-badge" class="count-badge skeleton sk-block" style="width:60px">&nbsp;</span>
+      <div class="head-spacer"></div>
+      <div class="head-action">
+        <input id="history-search" type="search" placeholder="Search prompts…" aria-label="Search prompts">
+      </div>
+    </div>
     <div class="tabs" id="history-tabs"></div>
     <table>
       <thead>
-        <tr><th>Time</th><th>Project</th><th>Prompt</th><th>Session</th></tr>
+        <tr><th>Time</th><th>Project</th><th>Prompt</th><th>Session</th><th></th></tr>
       </thead>
       <tbody id="history-table-body">
-        <tr><td colspan="4" class="loading">Loading...</td></tr>
+        <tr><td colspan="5"><div class="skeleton sk-block" style="width:100%;height:80px"></div></td></tr>
       </tbody>
     </table>
   </div>
@@ -581,7 +997,114 @@
       const agents = await fetch('/api/agents').then(r => r.json());
       renderAgentTabs(agents);
       bindRefresh();
+      bindSearchInputs();
+      bindKeyboardShortcuts();
+      setupScrollSpy();
       await reload();
+    }
+
+    function bindSearchInputs() {
+      const debounce = (fn, ms) => {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+      };
+      const hist = document.getElementById('history-search');
+      if (hist && !hist._bound) {
+        hist._bound = true;
+        hist.addEventListener('input', debounce(applyHistoryFilter, 120));
+      }
+      const proj = document.getElementById('project-search');
+      if (proj && !proj._bound) {
+        proj._bound = true;
+        proj.addEventListener('input', debounce(applyProjectFilter, 120));
+      }
+    }
+
+    function bindKeyboardShortcuts() {
+      if (window._kbBound) return;
+      window._kbBound = true;
+      document.addEventListener('keydown', (e) => {
+        const tag = (e.target && e.target.tagName) || '';
+        const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+        if (!inField && (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey)))) {
+          e.preventDefault();
+          const el = document.getElementById('history-search');
+          if (el) { el.focus(); el.select(); }
+        }
+        if (!inField && (e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
+          const btn = document.getElementById('refresh-btn');
+          if (btn) btn.click();
+        }
+        if (e.key === 'Escape' && inField) {
+          e.target.value = '';
+          e.target.dispatchEvent(new Event('input', { bubbles: true }));
+          e.target.blur();
+        }
+      });
+    }
+
+    function stickyOffset() {
+      const top = document.querySelector('.topbar');
+      const tabs = document.getElementById('agent-tabs');
+      const topH = top ? top.getBoundingClientRect().height : 0;
+      const tabsH = tabs ? tabs.getBoundingClientRect().height : 0;
+      return Math.ceil(topH + tabsH + 8);
+    }
+
+    let _scrollSpyLock = 0;
+    function setupScrollSpy() {
+      const pills = document.querySelectorAll('.nav-pill[data-target]');
+      const sections = Array.from(pills).map(p => {
+        const id = p.dataset.target;
+        return { id, el: document.getElementById(id), pill: p };
+      }).filter(s => s.el);
+
+      const setActive = (id) => {
+        pills.forEach(p => p.classList.toggle('active', p.dataset.target === id));
+      };
+
+      pills.forEach(p => {
+        p.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = p.dataset.target;
+          const target = document.getElementById(id);
+          if (!target) return;
+          setActive(id);
+          history.replaceState(null, '', '#' + id);
+          const y = target.getBoundingClientRect().top + window.scrollY - stickyOffset();
+          _scrollSpyLock = Date.now() + 900;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        });
+      });
+
+      const update = () => {
+        if (Date.now() < _scrollSpyLock) return;
+        const y = window.scrollY + stickyOffset() + 4;
+        let active = sections[0];
+        for (const s of sections) {
+          if (s.el.offsetTop <= y) active = s;
+        }
+        if (active) setActive(active.id);
+      };
+      let raf = 0;
+      window.addEventListener('scroll', () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => { raf = 0; update(); });
+      }, { passive: true });
+      window.addEventListener('resize', update);
+
+      if (location.hash) {
+        const id = location.hash.slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          requestAnimationFrame(() => {
+            setActive(id);
+            const y = target.getBoundingClientRect().top + window.scrollY - stickyOffset();
+            window.scrollTo({ top: Math.max(0, y) });
+          });
+        }
+      }
+      update();
     }
 
     function bindRefresh() {
@@ -636,23 +1159,49 @@
       return currentAgent ? `${path}?agent=${encodeURIComponent(currentAgent)}` : path;
     }
 
-    async function reload() {
-      document.getElementById('summary-section').innerHTML = '<div class="loading">Loading...</div>';
-      document.getElementById('cache-cards').innerHTML = '<div class="card"><div class="label">Loading...</div></div>';
-      document.getElementById('daily-costs').innerHTML = '<div class="loading">Loading...</div>';
-      document.getElementById('tool-calls').innerHTML = '<div class="loading">Loading...</div>';
-      document.getElementById('projects-body').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
-      document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" class="loading">Loading...</td></tr>';
+    function showLoading() {
+      const skel = (h) => `<span class="skeleton sk-block" style="width:100%;height:${h}px;display:block"></span>`;
+      document.getElementById('overview').innerHTML = `<div class="summary-grid">${['today','alltime'].map(c => `<div class="summary-panel ${c}">${skel(180)}</div>`).join('')}</div>`;
+      document.getElementById('cache-cards').innerHTML = Array(4).fill(0).map(() =>
+        `<div class="card">${skel(48)}</div>`).join('');
+      document.getElementById('charts-grid').innerHTML = `<div class="chart-card wide">${skel(220)}</div>`;
+      document.getElementById('daily-costs').innerHTML = skel(180);
+      document.getElementById('tool-calls').innerHTML = skel(140);
+      document.getElementById('projects-body').innerHTML = `<tr><td colspan="4">${skel(60)}</td></tr>`;
+      document.getElementById('history-table-body').innerHTML = `<tr><td colspan="5">${skel(80)}</td></tr>`;
+      for (const id of ['cache-badge','costs-badge','tools-badge','projects-badge','history-badge']) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = 'count-badge skeleton sk-block';
+          el.style.width = '60px';
+          el.innerHTML = '&nbsp;';
+        }
+      }
+    }
 
-      const [stats, history, toolData, projects, costData] = await Promise.all([
+    function setBadge(id, text) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'count-badge';
+      el.style.width = '';
+      el.textContent = text;
+    }
+
+    async function reload() {
+      showLoading();
+
+      const [stats, history, toolData, projects, costData, metrics] = await Promise.all([
         fetch('/api/stats').then(r => r.json()),
         fetch(q('/api/history')).then(r => r.json()),
         fetch(q('/api/tool-calls')).then(r => r.json()),
         fetch(q('/api/projects')).then(r => r.json()),
         fetch(q('/api/daily-costs')).then(r => r.json()),
+        fetch(q('/api/metrics')).then(r => r.json()),
       ]);
 
+      renderTopbarKpis(costData);
       renderSummary(costData, stats);
+      renderCharts(costData, metrics, toolData);
       renderDailyCosts(costData);
       renderTools(toolData);
       renderProjects(projects);
@@ -660,8 +1209,57 @@
       setLastUpdated();
     }
 
+    function renderTopbarKpis(costData) {
+      const strip = document.getElementById('kpi-strip');
+      if (!strip) return;
+      const totals = costData.totals || {};
+      const days = costData.days || [];
+      const today = new Date().toISOString().slice(0, 10);
+      const todayData = days.find(d => d.date === today) || { cost: 0, messages: 0, sessions: 0 };
+      const prior = days.find(d => d.date !== today) || null;
+
+      function trend(now, prev) {
+        if (prev == null || prev === 0) {
+          return now > 0 ? `<span class="k-trend up">new</span>` : '';
+        }
+        const pct = ((now - prev) / prev) * 100;
+        if (Math.abs(pct) < 1) return `<span class="k-trend flat">±0%</span>`;
+        const cls = pct > 0 ? 'up' : 'down';
+        const arrow = pct > 0 ? '▲' : '▼';
+        return `<span class="k-trend ${cls}" title="vs prior day ${prev}">${arrow} ${Math.abs(pct).toFixed(0)}%</span>`;
+      }
+
+      const pills = [
+        {
+          label: 'Today',
+          val: '$' + (todayData.cost || 0).toFixed(2),
+          trend: trend(todayData.cost || 0, prior && prior.cost),
+          title: 'Today\'s estimated cost'
+        },
+        {
+          label: 'Msgs',
+          val: compact(todayData.messages || 0),
+          trend: trend(todayData.messages || 0, prior && prior.messages),
+          title: 'Messages today'
+        },
+        {
+          label: 'Total',
+          val: '$' + (totals.cost || 0).toFixed(2),
+          trend: '',
+          title: 'All-time estimated cost'
+        },
+      ];
+      strip.innerHTML = pills.map(p =>
+        `<span class="kpi-pill" title="${escapeAttr(p.title)}">
+          <span class="k-label">${p.label}</span>
+          <span class="k-val">${p.val}</span>
+          ${p.trend}
+        </span>`
+      ).join('');
+    }
+
     function renderSummary(costData, stats) {
-      const container = document.getElementById('summary-section');
+      const container = document.getElementById('overview');
       const totals = costData.totals || {};
       const days = costData.days || [];
       const rates = costData.rates || {};
@@ -770,16 +1368,290 @@
       </div>`;
     }
 
+    const PALETTE = ['#cba6f7', '#89b4fa', '#74c7ec', '#a6e3a1', '#f9e2af', '#fab387', '#f38ba8', '#f5c2e7', '#94e2d5', '#b4befe'];
+    const escapeAttr = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    const CHART_H = 180;
+    const emptyChart = (W, H) => `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><text x="${W/2}" y="${H/2}" text-anchor="middle" dominant-baseline="middle">No data</text></svg>`;
+
+    const _chartRO = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(entries => {
+      for (const e of entries) {
+        const fn = e.target._chartFn;
+        if (!fn) continue;
+        const w = Math.max(220, Math.round(e.contentRect.width));
+        if (e.target._lastW === w) continue;
+        e.target._lastW = w;
+        e.target.innerHTML = fn(w);
+      }
+    }) : null;
+
+    function mountChart(host, fn) {
+      if (!host) return;
+      host._chartFn = fn;
+      const w = Math.max(220, Math.round(host.clientWidth || 600));
+      host._lastW = w;
+      host.innerHTML = fn(w);
+      if (_chartRO) _chartRO.observe(host);
+    }
+
+    function niceMax(v) {
+      if (v <= 0) return 1;
+      const pow = Math.pow(10, Math.floor(Math.log10(v)));
+      const n = v / pow;
+      const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+      return step * pow;
+    }
+
+    function svgLineChart(W, points, opts) {
+      const H = CHART_H, P = { t: 14, r: 14, b: 26, l: 48 };
+      if (!points.length) return emptyChart(W, H);
+      const innerW = W - P.l - P.r, innerH = H - P.t - P.b;
+      const rawMax = Math.max(...points.map(p => p.y), opts.minY || 0);
+      const maxY = niceMax(rawMax) || 1;
+      const stepX = points.length > 1 ? innerW / (points.length - 1) : 0;
+      const x = (i) => P.l + (points.length === 1 ? innerW / 2 : i * stepX);
+      const y = (v) => P.t + innerH - (v / maxY) * innerH;
+
+      const ticks = 4;
+      const gridLines = [];
+      for (let i = 0; i <= ticks; i++) {
+        const v = (maxY / ticks) * i;
+        const yy = y(v);
+        gridLines.push(`<line class="grid" x1="${P.l}" y1="${yy}" x2="${W - P.r}" y2="${yy}"/>`);
+        gridLines.push(`<text x="${P.l - 8}" y="${yy}" text-anchor="end" dominant-baseline="middle">${opts.fmtY ? opts.fmtY(v) : v.toFixed(0)}</text>`);
+      }
+
+      const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(p.y)}`).join(' ');
+      const area = points.length > 1
+        ? `M${x(0)},${y(0)} ${points.map((p, i) => `L${x(i)},${y(p.y)}`).join(' ')} L${x(points.length-1)},${y(0)} Z`
+        : '';
+
+      const tickEvery = Math.max(1, Math.ceil(points.length / 8));
+      const xLabels = points.map((p, i) => (i % tickEvery === 0 || i === points.length - 1)
+        ? `<text x="${x(i)}" y="${H - P.b + 16}" text-anchor="middle">${escapeHtml(p.label)}</text>` : '').join('');
+
+      const showDots = points.length <= 60;
+      const dots = showDots ? points.map((p, i) =>
+        `<circle class="dot" cx="${x(i)}" cy="${y(p.y)}" r="2.5" fill="${opts.color || '#cba6f7'}"><title>${escapeHtml(p.label)}: ${opts.fmtY ? opts.fmtY(p.y) : p.y}</title></circle>`).join('') : '';
+
+      return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        ${gridLines.join('')}
+        ${area ? `<path class="area" d="${area}" fill="${opts.color || '#cba6f7'}"/>` : ''}
+        <path class="line" d="${path}" stroke="${opts.color || '#cba6f7'}"/>
+        ${dots}
+        ${xLabels}
+      </svg>`;
+    }
+
+    function svgStackedBars(W, days, series) {
+      const H = CHART_H, P = { t: 14, r: 14, b: 26, l: 48 };
+      if (!days.length) return emptyChart(W, H);
+      const innerW = W - P.l - P.r, innerH = H - P.t - P.b;
+      const totals = days.map(d => series.reduce((s, k) => s + (d[k.key] || 0), 0));
+      const rawMax = Math.max(...totals, 0);
+      const maxY = niceMax(rawMax) || 1;
+      const slot = innerW / days.length;
+      const barW = Math.max(2, Math.min(28, slot * 0.7));
+
+      const ticks = 4;
+      const gridLines = [];
+      for (let i = 0; i <= ticks; i++) {
+        const v = (maxY / ticks) * i;
+        const yy = P.t + innerH - (v / maxY) * innerH;
+        gridLines.push(`<line class="grid" x1="${P.l}" y1="${yy}" x2="${W - P.r}" y2="${yy}"/>`);
+        gridLines.push(`<text x="${P.l - 8}" y="${yy}" text-anchor="end" dominant-baseline="middle">${compact(v)}</text>`);
+      }
+
+      const bars = days.map((d, i) => {
+        const cx = P.l + slot * i + slot / 2;
+        let acc = 0;
+        const visible = series.filter(s => (d[s.key] || 0) > 0);
+        return visible.map((s, j) => {
+          const v = d[s.key] || 0;
+          const h = (v / maxY) * innerH;
+          const yy = P.t + innerH - (acc + v) / maxY * innerH;
+          acc += v;
+          const isTop = j === visible.length - 1;
+          return `<rect class="bar" x="${cx - barW/2}" y="${yy}" width="${barW}" height="${Math.max(0.5, h)}" fill="${s.color}"${isTop ? ' rx="2"' : ''}><title>${escapeHtml(d.date)} · ${s.label}: ${compact(v)}</title></rect>`;
+        }).join('');
+      }).join('');
+
+      const tickEvery = Math.max(1, Math.ceil(days.length / 8));
+      const xLabels = days.map((d, i) => (i % tickEvery === 0 || i === days.length - 1)
+        ? `<text x="${P.l + slot * i + slot/2}" y="${H - P.b + 16}" text-anchor="middle">${escapeHtml(d.date.slice(5))}</text>` : '').join('');
+
+      return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        ${gridLines.join('')}
+        ${bars}
+        ${xLabels}
+      </svg>`;
+    }
+
+    function svgVerticalBars(W, items, opts) {
+      const H = CHART_H, P = { t: 14, r: 14, b: 26, l: 40 };
+      if (!items.length) return emptyChart(W, H);
+      const innerW = W - P.l - P.r, innerH = H - P.t - P.b;
+      const rawMax = Math.max(...items.map(it => it.value), 0);
+      const maxY = niceMax(rawMax) || 1;
+      const slot = innerW / items.length;
+      const barW = Math.max(2, Math.min(36, slot * 0.7));
+
+      const ticks = 4;
+      const gridLines = [];
+      for (let i = 0; i <= ticks; i++) {
+        const v = (maxY / ticks) * i;
+        const yy = P.t + innerH - (v / maxY) * innerH;
+        gridLines.push(`<line class="grid" x1="${P.l}" y1="${yy}" x2="${W - P.r}" y2="${yy}"/>`);
+        gridLines.push(`<text x="${P.l - 8}" y="${yy}" text-anchor="end" dominant-baseline="middle">${compact(v)}</text>`);
+      }
+
+      const bars = items.map((it, i) => {
+        const cx = P.l + slot * i + slot / 2;
+        const h = (it.value / maxY) * innerH;
+        const yy = P.t + innerH - h;
+        return `<rect class="bar" x="${cx - barW/2}" y="${yy}" width="${barW}" height="${Math.max(0.5, h)}" fill="${opts.color || '#89b4fa'}" rx="2"><title>${escapeHtml(it.label)}: ${compact(it.value)}</title></rect>`;
+      }).join('');
+
+      const tickEvery = items.length > 14 ? Math.ceil(items.length / 12) : 1;
+      const xLabels = items.map((it, i) => (i % tickEvery === 0 || i === items.length - 1)
+        ? `<text x="${P.l + slot * i + slot/2}" y="${H - P.b + 16}" text-anchor="middle">${escapeHtml(it.label)}</text>` : '').join('');
+
+      return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        ${gridLines.join('')}
+        ${bars}
+        ${xLabels}
+      </svg>`;
+    }
+
+    function svgDonut(slices) {
+      const size = 160, cx = size / 2, cy = size / 2, r = 70, rInner = 44;
+      const total = slices.reduce((s, x) => s + x.value, 0);
+      if (!total) {
+        return `<svg viewBox="0 0 ${size} ${size}">
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#313244" stroke-width="${r - rInner}"/>
+          <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" style="fill:#6c7086;font-size:11px">No data</text>
+        </svg>`;
+      }
+
+      const visible = slices.filter(s => s.value > 0);
+      let arcs = '';
+
+      if (visible.length === 1) {
+        const s = visible[0];
+        arcs = `<path d="M${cx - r},${cy} A${r},${r} 0 1 1 ${cx + r},${cy} A${r},${r} 0 1 1 ${cx - r},${cy} M${cx - rInner},${cy} A${rInner},${rInner} 0 1 0 ${cx + rInner},${cy} A${rInner},${rInner} 0 1 0 ${cx - rInner},${cy} Z" fill="${s.color}" fill-rule="evenodd"><title>${escapeHtml(s.label)}: ${compact(s.value)} (100%)</title></path>`;
+      } else {
+        let a0 = -Math.PI / 2;
+        arcs = visible.map((s) => {
+          const frac = s.value / total;
+          const a1 = a0 + frac * Math.PI * 2;
+          const large = frac > 0.5 ? 1 : 0;
+          const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+          const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+          const xi0 = cx + rInner * Math.cos(a0), yi0 = cy + rInner * Math.sin(a0);
+          const xi1 = cx + rInner * Math.cos(a1), yi1 = cy + rInner * Math.sin(a1);
+          a0 = a1;
+          const d = `M${x0},${y0} A${r},${r} 0 ${large} 1 ${x1},${y1} L${xi1},${yi1} A${rInner},${rInner} 0 ${large} 0 ${xi0},${yi0} Z`;
+          return `<path d="${d}" fill="${s.color}" stroke="#1e1e2e" stroke-width="1.5"><title>${escapeHtml(s.label)}: ${compact(s.value)} (${(frac*100).toFixed(1)}%)</title></path>`;
+        }).join('');
+      }
+
+      return `<svg viewBox="0 0 ${size} ${size}">
+        ${arcs}
+        <text x="${cx}" y="${cy - 6}" text-anchor="middle" dominant-baseline="middle" style="fill:#cdd6f4;font-size:16px;font-weight:700">${compact(total)}</text>
+        <text x="${cx}" y="${cy + 10}" text-anchor="middle" dominant-baseline="middle" style="font-size:10px;letter-spacing:0.04em">TOTAL</text>
+      </svg>`;
+    }
+
+    function donutCard(title, sub, items, fmtVal) {
+      if (!items.length) {
+        return `<div class="chart-card"><div class="chart-title">${title}</div><div class="loading">No data</div></div>`;
+      }
+      const slices = items.map((it, i) => ({ label: it.label, value: it.value, color: PALETTE[i % PALETTE.length] }));
+      const legend = slices.map(s => `
+        <div class="legend-item">
+          <span style="display:inline-flex;align-items:center;gap:5px;flex:1;min-width:0">
+            <span class="legend-swatch" style="background:${s.color}"></span>
+            <span class="legend-name" title="${escapeAttr(s.label)}">${escapeHtml(s.label)}</span>
+          </span>
+          <span class="legend-val">${fmtVal ? fmtVal(s.value) : compact(s.value)}</span>
+        </div>`).join('');
+      return `<div class="chart-card">
+        <div class="chart-title"><span>${title}</span>${sub ? `<span class="chart-sub">${sub}</span>` : ''}</div>
+        <div class="donut-wrap">${svgDonut(slices)}<div class="legend">${legend}</div></div>
+      </div>`;
+    }
+
+    function renderCharts(costData, metrics, toolData) {
+      const container = document.getElementById('charts-grid');
+      const days = (costData.days || []).slice().reverse();
+
+      if (_chartRO) _chartRO.disconnect();
+
+      const tokenSeries = [
+        { key: 'cacheRead', label: 'Cache Read', color: '#a6e3a1' },
+        { key: 'cacheCreate', label: 'Cache Write', color: '#94e2d5' },
+        { key: 'input', label: 'Input', color: '#89b4fa' },
+        { key: 'output', label: 'Output', color: '#cba6f7' },
+      ];
+      const tokenLegend = tokenSeries.map(s => `<span class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}</span>`).join('');
+
+      const hourly = (metrics.hourly || Array(24).fill(0)).map((v, h) => ({ label: String(h).padStart(2, '0'), value: v }));
+      const wdNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const weekday = (metrics.weekday || Array(7).fill(0)).map((v, i) => ({ label: wdNames[i], value: v }));
+
+      const agentItems = (metrics.agents || []).map(a => ({ label: a.name, value: a.messages }));
+      const modelItems = (metrics.models || []).slice(0, 8).map(m => ({ label: m.name, value: m.count }));
+      const toolItems = ((toolData && toolData.tools) || []).slice(0, 8).map(t => ({ label: t.tool, value: t.count }));
+
+      const costPoints = days.map(d => ({ label: d.date.slice(5), y: d.cost }));
+
+      container.innerHTML = `
+        <div class="chart-card wide">
+          <div class="chart-title"><span>Daily Cost</span><span class="chart-sub">Last ${days.length} day${days.length === 1 ? '' : 's'}</span></div>
+          <div class="chart-host" id="ch-cost"></div>
+        </div>
+        <div class="chart-card wide">
+          <div class="chart-title"><span>Token Volume by Day</span><span class="chart-sub">Stacked: input · output · cache</span></div>
+          <div class="chart-host" id="ch-tokens"></div>
+          <div class="legend">${tokenLegend}</div>
+        </div>
+        <div class="chart-card wide">
+          <div class="chart-title"><span>Activity by Hour</span><span class="chart-sub">Events per hour of day (local)</span></div>
+          <div class="chart-host" id="ch-hour"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title"><span>Activity by Weekday</span></div>
+          <div class="chart-host" id="ch-weekday"></div>
+        </div>
+        ${donutCard('Agent Distribution', 'User messages by agent', agentItems)}
+        ${donutCard('Model Distribution', 'Assistant responses (top 8)', modelItems)}
+        ${donutCard('Tool Distribution', 'Top 8 tools', toolItems)}
+      `;
+
+      mountChart(document.getElementById('ch-cost'), (W) => svgLineChart(W, costPoints, { color: '#f9e2af', fmtY: (v) => '$' + v.toFixed(2) }));
+      mountChart(document.getElementById('ch-tokens'), (W) => svgStackedBars(W, days, tokenSeries));
+      mountChart(document.getElementById('ch-hour'), (W) => svgVerticalBars(W, hourly, { color: '#89b4fa' }));
+      mountChart(document.getElementById('ch-weekday'), (W) => svgVerticalBars(W, weekday, { color: '#74c7ec' }));
+    }
+
     function renderDailyCosts(data) {
       const container = document.getElementById('daily-costs');
       const { days, totals } = data;
       const rates = data.rates || {};
       const refAgent = data.agentFilter || 'claude';
       const refRate = rates[refAgent] || rates.claude || { input: 5e-6, output: 25e-6, label: '' };
+      setBadge('costs-badge', (days || []).length + (days && days.length === 1 ? ' day' : ' days'));
       if (!days || !days.length) {
-        container.innerHTML = '<div class="loading">No cost data found</div>';
+        container.innerHTML = `<div class="empty">
+          <div class="empty-icon">∅</div>
+          <div class="empty-msg">No cost data yet</div>
+          <div class="empty-hint">Once any agent records a session, daily costs appear here.</div>
+        </div>`;
+        document.getElementById('cache-cards').innerHTML = '';
+        setBadge('cache-badge', '—');
         return;
       }
+      setBadge('cache-badge', '');
 
       // Render cache summary cards
       const totalAllInput = totals.input + totals.cacheRead + totals.cacheCreate;
@@ -787,6 +1659,7 @@
       const costWithoutCache = totalAllInput * refRate.input + totals.output * refRate.output;
       const saved = costWithoutCache - totals.cost;
       const savingsPct = costWithoutCache > 0 ? ((1 - totals.cost / costWithoutCache) * 100) : 0;
+      setBadge('cache-badge', hitRate.toFixed(1) + '% hit rate');
 
       document.getElementById('cache-cards').innerHTML = [
         card('Cache Hit Rate', hitRate.toFixed(1) + '%', `${fmt(totals.cacheRead)} of ${fmt(totalAllInput)} input tokens`),
@@ -853,8 +1726,13 @@
     function renderTools(data) {
       const tools = data.tools || [];
       const container = document.getElementById('tool-calls');
+      setBadge('tools-badge', tools.length + (tools.length === 1 ? ' tool' : ' tools'));
       if (!tools.length) {
-        container.innerHTML = '<div class="loading">No tool calls in this scope. Try a different agent or run more sessions.</div>';
+        container.innerHTML = `<div class="empty">
+          <div class="empty-icon">⚒</div>
+          <div class="empty-msg">No tool calls in this scope</div>
+          <div class="empty-hint">Try a different agent or run more sessions.</div>
+        </div>`;
         return;
       }
       const max = tools[0].count;
@@ -954,30 +1832,63 @@
       container.appendChild(panel);
     }
 
+    let _allProjects = [];
     function renderProjects(projects) {
+      _allProjects = projects || [];
+      setBadge('projects-badge', _allProjects.length + (_allProjects.length === 1 ? ' project' : ' projects'));
+      applyProjectFilter();
+    }
+
+    function applyProjectFilter() {
       const tbody = document.getElementById('projects-body');
+      const input = document.getElementById('project-search');
+      const query = (input && input.value || '').trim().toLowerCase();
+      const projects = query
+        ? _allProjects.filter(p => (p.name || '').toLowerCase().includes(query) || (p.shortName || '').toLowerCase().includes(query))
+        : _allProjects;
+
+      if (!_allProjects.length) {
+        tbody.innerHTML = `<tr><td colspan="4">
+          <div class="empty">
+            <div class="empty-icon">◌</div>
+            <div class="empty-msg">No projects yet</div>
+            <div class="empty-hint">Run an agent in any directory and it will appear here.</div>
+          </div></td></tr>`;
+        return;
+      }
       if (!projects.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="loading">No projects found</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="4">
+          <div class="empty">
+            <div class="empty-icon">⌕</div>
+            <div class="empty-msg">No matches for "${escapeHtml(query)}"</div>
+            <div class="empty-hint">Try a shorter search term.</div>
+          </div></td></tr>`;
         return;
       }
       tbody.innerHTML = projects.map(p => `
         <tr>
           <td>
             ${(p.agents || []).map(a => `<span class="agent-badge">${a}</span>`).join('')}
-            <span class="project-badge">${p.shortName}</span><br>
-            <span class="session-id">${p.name}</span>
+            <span class="project-badge">${escapeHtml(p.shortName)}</span><br>
+            <span class="session-id">${escapeHtml(p.name)}</span>
           </td>
-          <td>${fmt(p.messages)}</td>
-          <td>${fmt(p.sessions)}</td>
+          <td class="num">${fmt(p.messages)}</td>
+          <td class="num">${fmt(p.sessions)}</td>
           <td title="${fmtDateTime(p.lastSeen)}">${fmtRelative(p.lastSeen)}</td>
         </tr>
       `).join('');
     }
 
+    let _allHistory = [];
+    let _historyProjectFilter = 'all';
+    let _historyTabsBound = false;
     function renderHistory(history) {
-      // Order tabs by project recency (newest activity first)
+      _allHistory = history || [];
+      _historyProjectFilter = 'all';
+      setBadge('history-badge', _allHistory.length + (_allHistory.length === 1 ? ' prompt' : ' prompts'));
+
       const projectLastSeen = {};
-      for (const h of history) {
+      for (const h of _allHistory) {
         const ts = h.timestamp || '';
         if (!projectLastSeen[h.project] || ts > projectLastSeen[h.project]) {
           projectLastSeen[h.project] = ts;
@@ -990,37 +1901,81 @@
 
       tabsEl.innerHTML = `<button class="tab active" data-project="all">All</button>` +
         allProjects.map(p =>
-          `<button class="tab" data-project="${p}" title="${p}">${shortProject(p)}</button>`
+          `<button class="tab" data-project="${escapeAttr(p)}" title="${escapeAttr(p)}">${escapeHtml(shortProject(p))}</button>`
         ).join('');
 
-      const tbody = document.getElementById('history-table-body');
-
-      function render(filter) {
-        const filtered = filter === 'all' ? history : history.filter(h => h.project === filter);
-        if (!filtered.length) {
-          tbody.innerHTML = '<tr><td colspan="4" class="loading">No prompts yet for this view.</td></tr>';
-          return;
-        }
-        // History endpoint already returns newest first.
-        const sorted = filtered;
-        tbody.innerHTML = sorted.map(h => `
-          <tr>
-            <td style="white-space:nowrap" title="${fmtDateTime(h.timestamp)}">${fmtRelative(h.timestamp)}</td>
-            <td>${h.agent ? `<span class="agent-badge">${h.agent}</span>` : ''}<span class="project-badge">${shortProject(h.project)}</span></td>
-            <td class="prompt-text" title="${(h.display || '').replace(/"/g, '&quot;')}">${escapeHtml(h.display || '')}</td>
-            <td class="session-id">${(h.sessionId || '').slice(0, 8)}</td>
-          </tr>
-        `).join('');
+      if (!_historyTabsBound) {
+        tabsEl.addEventListener('click', (e) => {
+          const t = e.target.closest('.tab');
+          if (!t) return;
+          tabsEl.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+          t.classList.add('active');
+          _historyProjectFilter = t.dataset.project;
+          applyHistoryFilter();
+        });
+        _historyTabsBound = true;
       }
 
-      tabsEl.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('tab')) return;
-        tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-        render(e.target.dataset.project);
-      });
+      applyHistoryFilter();
+    }
 
-      render('all');
+    function applyHistoryFilter() {
+      const tbody = document.getElementById('history-table-body');
+      const input = document.getElementById('history-search');
+      const query = (input && input.value || '').trim().toLowerCase();
+      let filtered = _historyProjectFilter === 'all'
+        ? _allHistory
+        : _allHistory.filter(h => h.project === _historyProjectFilter);
+      if (query) {
+        filtered = filtered.filter(h => (h.display || '').toLowerCase().includes(query));
+      }
+
+      if (!_allHistory.length) {
+        tbody.innerHTML = `<tr><td colspan="5">
+          <div class="empty">
+            <div class="empty-icon">✎</div>
+            <div class="empty-msg">No prompts yet</div>
+            <div class="empty-hint">Send a prompt in any agent and it will appear here.</div>
+          </div></td></tr>`;
+        return;
+      }
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="5">
+          <div class="empty">
+            <div class="empty-icon">⌕</div>
+            <div class="empty-msg">No prompts match this view</div>
+            <div class="empty-hint">${query ? `Nothing matches "${escapeHtml(query)}". ` : ''}Try a different project tab or clear the search.</div>
+          </div></td></tr>`;
+        return;
+      }
+      const MAX = 500;
+      const shown = filtered.slice(0, MAX);
+      tbody.innerHTML = shown.map((h, i) => `
+        <tr>
+          <td style="white-space:nowrap" title="${fmtDateTime(h.timestamp)}">${fmtRelative(h.timestamp)}</td>
+          <td>${h.agent ? `<span class="agent-badge">${escapeHtml(h.agent)}</span>` : ''}<span class="project-badge">${escapeHtml(shortProject(h.project))}</span></td>
+          <td class="prompt-text" title="${escapeAttr(h.display || '')}">${escapeHtml(h.display || '')}</td>
+          <td class="session-id">${escapeHtml((h.sessionId || '').slice(0, 8))}</td>
+          <td><button class="copy-btn" data-copy-idx="${i}" aria-label="Copy prompt">⧉</button></td>
+        </tr>
+      `).join('') + (filtered.length > MAX
+        ? `<tr><td colspan="5" class="detail-meta" style="padding:8px 12px;text-align:center">…and ${filtered.length - MAX} more. Narrow the search to see them.</td></tr>`
+        : '');
+
+      tbody.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const idx = parseInt(btn.dataset.copyIdx, 10);
+          const item = shown[idx];
+          if (!item) return;
+          try {
+            await navigator.clipboard.writeText(item.display || '');
+            const original = btn.textContent;
+            btn.textContent = '✓';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1200);
+          } catch (_) {}
+        });
+      });
     }
 
     function exportToolCalls() {
