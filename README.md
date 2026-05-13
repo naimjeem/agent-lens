@@ -24,11 +24,49 @@ OpenCode and Cursor read SQLite via the optional `better-sqlite3` dependency. If
 ## Features
 
 - **Agent selector** — filter the entire dashboard by agent or aggregate across all
-- **Today vs All-Time stats** — sessions, messages, tool calls, estimated cost
+- **Sticky topbar** — animated brand mark, live KPI pills (today cost / today messages / total cost with day-over-day trend), refresh button, section-nav pills with scroll-spy
+- **Today vs All-Time stats** — sessions, messages, tool calls, estimated cost, cache hit rate
+- **Charts & Metrics** — pure inline-SVG (no deps), responsive via `ResizeObserver`:
+  - Daily Cost line chart
+  - Token Volume stacked bars (input / output / cache read / cache write)
+  - Activity by Hour and Weekday bars
+  - Agent / Model / Tool distribution donuts
 - **Cache performance** — hit rate, savings vs no-cache baseline (uses the active agent's pricing)
 - **Daily cost & cache table** — per-day token breakdown with estimated spend
-- **Tool call analytics** — which tools each agent used most
+- **Tool call analytics** — which tools each agent used most, click any tool for the call list with export
+- **Prompt history** — searchable, project-tabbed, copy-to-clipboard per row
+- **Project activity** — searchable, agent badges, last-active relative time
+- **Collapsible lists** — projects / tools / history / daily-costs start collapsed with a gradient fade and a "Show all" pill (initial caps: 8 / 8 / 25 / 7)
+- **Live OpenRouter pricing** — refreshes per-model rates in the background; env vars override
 - **Per-agent pricing** — independent rate config per provider via `.env`
+- **Polish** — skeleton shimmer loaders, friendly empty states, sticky table headers, zebra rows, tabular-num alignment, `prefers-reduced-motion` support
+
+### Keyboard shortcuts
+
+| Key | Action |
+|-----|--------|
+| `/` or `Cmd/Ctrl-K` | Focus the prompt history search |
+| `R` | Reload dashboard data |
+| `Esc` | Clear and blur the focused search input |
+
+### HTTP API
+
+The dashboard is plain JSON over HTTP — useful for scripting or integrations.
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/agents` | Adapter list with `enabled` flag and `dataDir` |
+| `GET /api/pricing` | Live OpenRouter pricing snapshot (`?refresh=1` forces refresh) |
+| `GET /api/rates` | Effective per-agent rates (USD per 1M tokens) |
+| `GET /api/stats` | Adapter-specific cached stats (Claude only currently) |
+| `GET /api/history?agent=<name>` | All user prompts, newest first |
+| `GET /api/projects?agent=<name>` | Projects with message/session counts and agent badges |
+| `GET /api/tool-calls?agent=<name>` | Tool usage totals + per-project breakdown |
+| `GET /api/tool-details/:toolName?agent=<name>` | Every call for one tool (Bash command, file path, pattern, etc.) |
+| `GET /api/daily-costs?agent=<name>` | Per-day tokens, cache, cost, and totals |
+| `GET /api/metrics?agent=<name>` | Hourly + weekday buckets, agent/model totals, daily agent cost series |
+
+All endpoints accept an optional `agent` query param to scope by adapter name.
 
 ## Requirements
 

@@ -584,35 +584,120 @@
       gap: 14px;
       flex-wrap: wrap;
     }
-    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .brand:hover { transform: translateY(-1px); }
+    .brand:hover .brand-logo svg { transform: rotate(12deg) scale(1.08); }
+    .brand:hover .brand-name { letter-spacing: 0; }
+
     .brand-logo {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      position: relative;
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
       display: grid;
       place-items: center;
-      font-weight: 800;
-      color: var(--bg);
-      font-size: 0.9rem;
-      box-shadow: 0 4px 14px rgba(203,166,247,0.25);
-      flex-shrink: 0;
     }
-    .brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+    .brand-logo::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 12px;
+      background: conic-gradient(from 0deg,
+        var(--accent) 0deg,
+        var(--accent-2) 90deg,
+        var(--accent-3) 180deg,
+        var(--green) 270deg,
+        var(--accent) 360deg);
+      filter: blur(8px);
+      opacity: 0.55;
+      z-index: 0;
+      animation: brand-rotate 8s linear infinite;
+    }
+    .brand-logo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1e1e2e, #11111b);
+      border: 1px solid rgba(203,166,247,0.35);
+      z-index: 1;
+    }
+    .brand-logo svg {
+      position: relative;
+      z-index: 2;
+      width: 22px;
+      height: 22px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes brand-rotate {
+      to { transform: rotate(360deg); }
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+      min-width: 0;
+      gap: 1px;
+    }
     .brand-name {
-      font-size: 0.95rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      background: linear-gradient(
+        90deg,
+        var(--accent) 0%,
+        var(--accent-2) 25%,
+        var(--accent-3) 50%,
+        var(--accent-2) 75%,
+        var(--accent) 100%
+      );
+      background-size: 200% auto;
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      letter-spacing: -0.01em;
+      animation: brand-shine 6s linear infinite;
+      transition: letter-spacing 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-name .brand-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(166,227,161,0.7);
+      display: inline-block;
+      flex-shrink: 0;
+      animation: brand-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes brand-shine {
+      to { background-position: 200% center; }
+    }
+    @keyframes brand-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
     }
     .brand-sub {
       font-size: 0.62rem;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-logo::before { animation: none; }
+      .brand-name { animation: none; }
+      .brand-name .brand-dot { animation: none; }
     }
     .kpi-strip {
       display: flex;
@@ -817,18 +902,91 @@
     }
 
     /* Offset handled by JS stickyOffset(); CSS scroll-margin not used */
+
+    /* === Collapsible lists === */
+    .list-host { position: relative; }
+    .list-host.collapsed::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 96px;
+      pointer-events: none;
+      background: linear-gradient(to bottom, rgba(17,17,27,0) 0%, rgba(17,17,27,0.85) 60%, var(--bg) 100%);
+      z-index: 1;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .list-footer {
+      display: flex;
+      justify-content: center;
+      padding: 12px 0 2px;
+      position: relative;
+      z-index: 2;
+    }
+    .list-footer:empty { display: none; }
+    .show-more-btn {
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--text-2);
+      font-size: 0.73rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .show-more-btn:hover {
+      color: var(--text);
+      border-color: var(--line-2);
+      background: var(--bg-2);
+      transform: translateY(-1px);
+    }
+    .show-more-btn .chev {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      font-size: 0.7rem;
+    }
+    .show-more-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+    .show-more-btn .count {
+      color: var(--accent);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
   <header class="topbar" role="banner">
     <div class="topbar-row">
-      <div class="brand">
-        <div class="brand-logo" aria-hidden="true">AL</div>
-        <div class="brand-text">
-          <span class="brand-name">Agent Lens</span>
+      <a class="brand" href="#overview" aria-label="Agent Lens — go to overview">
+        <span class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="brandGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#cba6f7"/>
+                <stop offset="50%" stop-color="#89b4fa"/>
+                <stop offset="100%" stop-color="#74c7ec"/>
+              </linearGradient>
+            </defs>
+            <circle cx="12" cy="12" r="9" stroke="url(#brandGrad)" stroke-width="1.75"/>
+            <circle cx="12" cy="12" r="5" stroke="url(#brandGrad)" stroke-width="1.5"/>
+            <circle cx="12" cy="12" r="1.8" fill="url(#brandGrad)"/>
+            <path d="M12 3 L13.5 6.5 L10.5 6.5 Z" fill="url(#brandGrad)" opacity="0.85"/>
+            <path d="M21 12 L17.5 13.5 L17.5 10.5 Z" fill="url(#brandGrad)" opacity="0.85"/>
+            <path d="M12 21 L10.5 17.5 L13.5 17.5 Z" fill="url(#brandGrad)" opacity="0.85"/>
+            <path d="M3 12 L6.5 10.5 L6.5 13.5 Z" fill="url(#brandGrad)" opacity="0.85"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">
+            Agent Lens
+            <span class="brand-dot" title="Live" aria-hidden="true"></span>
+          </span>
           <span class="brand-sub">Multi-agent usage dashboard</span>
-        </div>
-      </div>
+        </span>
+      </a>
       <div class="topbar-spacer"></div>
       <div id="kpi-strip" class="kpi-strip" aria-label="Key metrics">
         <span class="kpi-pill"><span class="skeleton sk-block" style="width:80px"></span></span>
@@ -915,14 +1073,17 @@
         <input id="project-search" type="search" placeholder="Search projects…" aria-label="Search projects">
       </div>
     </div>
-    <table>
-      <thead>
-        <tr><th>Project</th><th class="num">Messages</th><th class="num">Sessions</th><th>Last Active</th></tr>
-      </thead>
-      <tbody id="projects-body">
-        <tr><td colspan="4"><div class="skeleton sk-block" style="width:100%;height:60px"></div></td></tr>
-      </tbody>
-    </table>
+    <div class="list-host" id="projects-host">
+      <table>
+        <thead>
+          <tr><th>Project</th><th class="num">Messages</th><th class="num">Sessions</th><th>Last Active</th></tr>
+        </thead>
+        <tbody id="projects-body">
+          <tr><td colspan="4"><div class="skeleton sk-block" style="width:100%;height:60px"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="list-footer" id="projects-footer"></div>
   </div>
 
   <div class="section" id="history">
@@ -935,14 +1096,17 @@
       </div>
     </div>
     <div class="tabs" id="history-tabs"></div>
-    <table>
-      <thead>
-        <tr><th>Time</th><th>Project</th><th>Prompt</th><th>Session</th><th></th></tr>
-      </thead>
-      <tbody id="history-table-body">
-        <tr><td colspan="5"><div class="skeleton sk-block" style="width:100%;height:80px"></div></td></tr>
-      </tbody>
-    </table>
+    <div class="list-host" id="history-host">
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Project</th><th>Prompt</th><th>Session</th><th></th></tr>
+        </thead>
+        <tbody id="history-table-body">
+          <tr><td colspan="5"><div class="skeleton sk-block" style="width:100%;height:80px"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="list-footer" id="history-footer"></div>
   </div>
 
   <script>
@@ -999,8 +1163,24 @@
       bindRefresh();
       bindSearchInputs();
       bindKeyboardShortcuts();
+      bindBrandLink();
       setupScrollSpy();
       await reload();
+    }
+
+    function bindBrandLink() {
+      const brand = document.querySelector('.brand');
+      if (!brand || brand._bound) return;
+      brand._bound = true;
+      brand.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.getElementById('overview');
+        if (!target) return;
+        const y = target.getBoundingClientRect().top + window.scrollY - stickyOffset();
+        _scrollSpyLock = Date.now() + 900;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        history.replaceState(null, '', '#overview');
+      });
     }
 
     function bindSearchInputs() {
@@ -1187,8 +1367,46 @@
       el.textContent = text;
     }
 
+    const _listExpanded = { projects: false, tools: false, history: false, costs: false };
+    const _listLimit = { projects: 8, tools: 8, history: 25, costs: 7 };
+
+    function setListFooter(key, hostId, footerId, total, shownCount, onToggle) {
+      const host = hostId ? document.getElementById(hostId) : null;
+      const footer = document.getElementById(footerId);
+      if (!footer) return;
+      const expanded = _listExpanded[key];
+      const hidden = Math.max(0, total - shownCount);
+      const hasMore = total > _listLimit[key];
+
+      if (!hasMore) {
+        footer.innerHTML = '';
+        if (host) host.classList.remove('collapsed');
+        return;
+      }
+
+      footer.innerHTML = `
+        <button class="show-more-btn" type="button" aria-expanded="${expanded}">
+          ${expanded
+            ? `<span>Show less</span>`
+            : `<span>Show all</span><span class="count">${total}</span><span style="color:var(--muted)">(+${hidden})</span>`}
+          <span class="chev" aria-hidden="true">▾</span>
+        </button>`;
+      footer.querySelector('.show-more-btn').addEventListener('click', () => {
+        _listExpanded[key] = !_listExpanded[key];
+        onToggle();
+        if (_listExpanded[key] === false && host) {
+          host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      if (host) host.classList.toggle('collapsed', !expanded);
+    }
+
     async function reload() {
       showLoading();
+      _listExpanded.projects = false;
+      _listExpanded.tools = false;
+      _listExpanded.history = false;
+      _listExpanded.costs = false;
 
       const [stats, history, toolData, projects, costData, metrics] = await Promise.all([
         fetch('/api/stats').then(r => r.json()),
@@ -1670,8 +1888,10 @@
 
       // Daily table with cache columns
       const maxCost = Math.max(...days.map(d => d.cost), 0.01);
+      const limit = _listLimit.costs;
+      const shown = _listExpanded.costs ? days : days.slice(0, limit);
 
-      const rows = days.map(d => {
+      const rows = shown.map(d => {
         const allInput = d.input + d.cacheRead + d.cacheCreate;
         const hr = allInput > 0 ? (d.cacheRead / allInput * 100) : 0;
         const noCacheCost = allInput * refRate.input + d.output * refRate.output;
@@ -1695,36 +1915,41 @@
         </tr>
       `}).join('');
 
-      const totalNoCacheCost = costWithoutCache;
       container.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th><th style="text-align:right">Msgs</th><th style="text-align:right">Tools</th><th style="text-align:right">Sess</th>
-              <th style="text-align:right">Cache Read</th><th style="text-align:right">Cache Write</th><th style="text-align:right">Hit Rate</th><th style="text-align:right">Est. Cost</th><th style="text-align:right">Saved</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-            <tr class="cost-total">
-              <td>Total</td>
-              <td class="cost-value">${fmt(totals.messages)}</td>
-              <td class="cost-value">${fmt(totals.toolCalls)}</td>
-              <td class="cost-value">${fmt(totals.sessions)}</td>
-              <td class="cost-value">${fmt(totals.cacheRead)}</td>
-              <td class="cost-value">${fmt(totals.cacheCreate)}</td>
-              <td class="cost-value" style="color: #a6e3a1">${hitRate.toFixed(1)}%</td>
-              <td class="cost-value"><strong>$${totals.cost.toFixed(2)}</strong></td>
-              <td class="cost-value" style="color: #a6e3a1"><strong>$${saved.toFixed(2)}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="list-host" id="costs-host">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th><th style="text-align:right">Msgs</th><th style="text-align:right">Tools</th><th style="text-align:right">Sess</th>
+                <th style="text-align:right">Cache Read</th><th style="text-align:right">Cache Write</th><th style="text-align:right">Hit Rate</th><th style="text-align:right">Est. Cost</th><th style="text-align:right">Saved</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+              <tr class="cost-total">
+                <td>Total</td>
+                <td class="cost-value">${fmt(totals.messages)}</td>
+                <td class="cost-value">${fmt(totals.toolCalls)}</td>
+                <td class="cost-value">${fmt(totals.sessions)}</td>
+                <td class="cost-value">${fmt(totals.cacheRead)}</td>
+                <td class="cost-value">${fmt(totals.cacheCreate)}</td>
+                <td class="cost-value" style="color: #a6e3a1">${hitRate.toFixed(1)}%</td>
+                <td class="cost-value"><strong>$${totals.cost.toFixed(2)}</strong></td>
+                <td class="cost-value" style="color: #a6e3a1"><strong>$${saved.toFixed(2)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="list-footer" id="costs-footer"></div>
         <div class="cost-note">Rates (${refAgent}): ${refRate.label || ''}. Override per-agent via RATE_* env vars. Cost shown sums per-event using each agent's own rates.</div>
       `;
+      setListFooter('costs', 'costs-host', 'costs-footer', days.length, shown.length, () => renderDailyCosts(data));
     }
 
+    let _toolsData = null;
     function renderTools(data) {
-      const tools = data.tools || [];
+      _toolsData = data;
+      const tools = (data && data.tools) || [];
       const container = document.getElementById('tool-calls');
       setBadge('tools-badge', tools.length + (tools.length === 1 ? ' tool' : ' tools'));
       if (!tools.length) {
@@ -1736,9 +1961,11 @@
         return;
       }
       const max = tools[0].count;
-      const rows = tools.map(t => `
-        <tr class="tool-row" data-tool="${t.tool}">
-          <td class="tool-name">${t.tool}</td>
+      const limit = _listLimit.tools;
+      const shown = _listExpanded.tools ? tools : tools.slice(0, limit);
+      const rows = shown.map(t => `
+        <tr class="tool-row" data-tool="${escapeAttr(t.tool)}">
+          <td class="tool-name">${escapeHtml(t.tool)}</td>
           <td style="width:100%">
             <div class="bar-container">
               <div class="bar" style="width: ${Math.max((t.count / max) * 100, 1)}%"></div>
@@ -1749,7 +1976,10 @@
       `).join('');
 
       container.innerHTML = `
-        <table><tbody id="tool-table-body">${rows}</tbody></table>
+        <div class="list-host" id="tools-host">
+          <table><tbody id="tool-table-body">${rows}</tbody></table>
+        </div>
+        <div class="list-footer" id="tools-footer"></div>
         <div id="tool-detail-container"></div>
       `;
 
@@ -1758,6 +1988,8 @@
         if (!row) return;
         loadToolDetails(row.dataset.tool);
       });
+
+      setListFooter('tools', 'tools-host', 'tools-footer', tools.length, shown.length, () => renderTools(_toolsData));
     }
 
     async function loadToolDetails(toolName) {
@@ -1847,6 +2079,9 @@
         ? _allProjects.filter(p => (p.name || '').toLowerCase().includes(query) || (p.shortName || '').toLowerCase().includes(query))
         : _allProjects;
 
+      const footer = document.getElementById('projects-footer');
+      const host = document.getElementById('projects-host');
+
       if (!_allProjects.length) {
         tbody.innerHTML = `<tr><td colspan="4">
           <div class="empty">
@@ -1854,6 +2089,8 @@
             <div class="empty-msg">No projects yet</div>
             <div class="empty-hint">Run an agent in any directory and it will appear here.</div>
           </div></td></tr>`;
+        if (footer) footer.innerHTML = '';
+        if (host) host.classList.remove('collapsed');
         return;
       }
       if (!projects.length) {
@@ -1863,9 +2100,14 @@
             <div class="empty-msg">No matches for "${escapeHtml(query)}"</div>
             <div class="empty-hint">Try a shorter search term.</div>
           </div></td></tr>`;
+        if (footer) footer.innerHTML = '';
+        if (host) host.classList.remove('collapsed');
         return;
       }
-      tbody.innerHTML = projects.map(p => `
+
+      const limit = _listLimit.projects;
+      const shown = _listExpanded.projects ? projects : projects.slice(0, limit);
+      tbody.innerHTML = shown.map(p => `
         <tr>
           <td>
             ${(p.agents || []).map(a => `<span class="agent-badge">${a}</span>`).join('')}
@@ -1877,6 +2119,7 @@
           <td title="${fmtDateTime(p.lastSeen)}">${fmtRelative(p.lastSeen)}</td>
         </tr>
       `).join('');
+      setListFooter('projects', 'projects-host', 'projects-footer', projects.length, shown.length, applyProjectFilter);
     }
 
     let _allHistory = [];
@@ -1921,6 +2164,8 @@
 
     function applyHistoryFilter() {
       const tbody = document.getElementById('history-table-body');
+      const host = document.getElementById('history-host');
+      const footer = document.getElementById('history-footer');
       const input = document.getElementById('history-search');
       const query = (input && input.value || '').trim().toLowerCase();
       let filtered = _historyProjectFilter === 'all'
@@ -1937,6 +2182,8 @@
             <div class="empty-msg">No prompts yet</div>
             <div class="empty-hint">Send a prompt in any agent and it will appear here.</div>
           </div></td></tr>`;
+        if (footer) footer.innerHTML = '';
+        if (host) host.classList.remove('collapsed');
         return;
       }
       if (!filtered.length) {
@@ -1946,10 +2193,14 @@
             <div class="empty-msg">No prompts match this view</div>
             <div class="empty-hint">${query ? `Nothing matches "${escapeHtml(query)}". ` : ''}Try a different project tab or clear the search.</div>
           </div></td></tr>`;
+        if (footer) footer.innerHTML = '';
+        if (host) host.classList.remove('collapsed');
         return;
       }
       const MAX = 500;
-      const shown = filtered.slice(0, MAX);
+      const capped = filtered.slice(0, MAX);
+      const limit = _listLimit.history;
+      const shown = _listExpanded.history ? capped : capped.slice(0, limit);
       tbody.innerHTML = shown.map((h, i) => `
         <tr>
           <td style="white-space:nowrap" title="${fmtDateTime(h.timestamp)}">${fmtRelative(h.timestamp)}</td>
@@ -1958,9 +2209,11 @@
           <td class="session-id">${escapeHtml((h.sessionId || '').slice(0, 8))}</td>
           <td><button class="copy-btn" data-copy-idx="${i}" aria-label="Copy prompt">⧉</button></td>
         </tr>
-      `).join('') + (filtered.length > MAX
+      `).join('') + (_listExpanded.history && filtered.length > MAX
         ? `<tr><td colspan="5" class="detail-meta" style="padding:8px 12px;text-align:center">…and ${filtered.length - MAX} more. Narrow the search to see them.</td></tr>`
         : '');
+
+      setListFooter('history', 'history-host', 'history-footer', capped.length, shown.length, applyHistoryFilter);
 
       tbody.querySelectorAll('.copy-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
