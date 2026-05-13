@@ -452,6 +452,8 @@
       border-radius: 10px;
       padding: 16px;
       box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+      min-width: 0;
+      overflow: hidden;
     }
     .chart-card.wide { grid-column: 1 / -1; }
     .chart-title {
@@ -503,12 +505,36 @@
       display: flex;
       gap: 16px;
       align-items: center;
+      min-width: 0;
     }
-    .donut-wrap svg { flex: 0 0 160px; height: 160px; }
-    .donut-wrap .legend { flex: 1 1 auto; flex-direction: column; gap: 6px; margin-top: 0; }
-    .donut-wrap .legend-item { justify-content: space-between; width: 100%; }
-    .donut-wrap .legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .donut-wrap .legend-val { color: #6c7086; font-variant-numeric: tabular-nums; }
+    .donut-wrap svg { flex: 0 0 140px; height: 140px; }
+    .donut-wrap .legend {
+      flex: 1 1 auto;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 0;
+      min-width: 0;
+      width: 100%;
+    }
+    .donut-wrap .legend-item {
+      justify-content: space-between;
+      width: 100%;
+      min-width: 0;
+      gap: 8px;
+    }
+    .donut-wrap .legend-name {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .donut-wrap .legend-val {
+      color: #6c7086;
+      font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
     @media (max-width: 768px) {
       .charts-grid { grid-template-columns: 1fr; gap: 12px; }
       .chart-card { padding: 12px; }
